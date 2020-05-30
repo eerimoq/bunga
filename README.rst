@@ -7,6 +7,13 @@ Control and monitor your system.
 
 Project homepage: https://github.com/eerimoq/bunga
 
+Installation
+------------
+
+.. code-block:: python
+
+   $ pip install bunga
+
 The shell subcommand
 --------------------
 
@@ -28,13 +35,6 @@ project`_) and execute the ``df`` command.
    /mnt/disk2                0 MB      0 MB      0 MB
    OK
    $
-
-Installation
-------------
-
-.. code-block:: python
-
-   $ pip install bunga
 
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga
