@@ -1,27 +1,23 @@
+import asyncio
 import sys
 import os
-import struct
 import argparse
-import cmd
 import threading
-import serial
-import hashlib
 
-from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
-from prompt_toolkit.interface import AbortAction
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
+from .version import __version__
+from .bunga_client import BungaClient
+from .bunga_pb2 import ExecuteCommandRsp
 
-from bunga_client import BungaClient
 
+class Client(BungaClient):
 
-class Client(MoamClient):
-
-    def __init__(self, uri):
+    def __init__(self, uri, loop):
         super().__init__(uri)
-        self._execute_command_complete_event = asyncio.Event()
+        self._execute_command_complete_event = asyncio.Event(loop=loop)
 
     async def on_connected(self):
         print('Connected to the server.')
@@ -30,12 +26,12 @@ class Client(MoamClient):
         print("Disconnected from the server.")
 
     async def on_execute_command_rsp(self, message):
-        print(message.output)
+        print(message.output, end='')
 
-        if message.kind == OK:
+        if message.kind == ExecuteCommandRsp.OK:
             print('OK')
             self._execute_command_complete_event.set()
-        elif message.kind == ERROR:
+        elif message.kind == ExecuteCommandRsp.ERROR:
             print(f'ERROR({message.error})')
             self._execute_command_complete_event.set()
 
@@ -44,21 +40,25 @@ class Client(MoamClient):
         message.command = command
         self._execute_command_complete_event.clear()
         self.send()
-        await self._execute_command_complete_event.wait()
+        await asyncio.wait_for(self._execute_command_complete_event.wait(), 5)
 
 
 class ClientThread(threading.Thread):
 
-    def __init__(self, loop, client):
+    def __init__(self, uri):
         super().__init__()
-        self._loop = loop
-        self._client = client
+        self._loop = asyncio.new_event_loop()
+        self._client = Client(uri, self._loop)
         self.daemon = True
 
     def run(self):
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._start())
         self._loop.run_forever()
+
+    def execute_command(self, command):
+        asyncio.run_coroutine_threadsafe(self._client.execute_command(command),
+                                         self._loop).result()
 
     async def _start(self):
         self._client.start()
@@ -72,10 +72,9 @@ def is_comment(line):
     return line.strip().startswith('#')
 
 
-def shell(client, debug):
+def shell(client):
     commands = [command[1:] for command in []]
     commands.append('exit')
-    completer = WordCompleter(commands, WORD=True)
     user_home = os.path.expanduser('~')
     history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
 
@@ -84,12 +83,10 @@ def shell(client, debug):
     while True:
         try:
             line = prompt('$ ',
-                          completer=completer,
                           complete_while_typing=True,
                           auto_suggest=AutoSuggestFromHistory(),
                           enable_history_search=True,
-                          history=history,
-                          on_abort=AbortAction.RETRY)
+                          history=history)
         except EOFError:
             break
 
@@ -103,13 +100,13 @@ def shell(client, debug):
                 print("Bye!")
                 break
 
-            asyncio.run_coroutine_threadsafe(
-                client.execute_command(line), loop).result()
+            client.execute_command(line)
 
 
 def do_shell(args):
-    client = Client('localhost', 23100, args.debug)
-    shell(client, client)
+    client = ClientThread(args.uri)
+    client.start()
+    shell(client)
 
 
 def main():
@@ -127,6 +124,9 @@ def main():
     subparsers.required = True
 
     shell_parser = subparsers.add_parser('shell')
+    shell_parser.add_argument('-u' ,'--uri',
+                              default='tcp://127.0.0.1:28000',
+                              help='URI of the server (default: %(default)s)')
     shell_parser.set_defaults(func=do_shell)
 
     args = parser.parse_args()
