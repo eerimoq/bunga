@@ -9,3 +9,16 @@ install:
 
 script:
   - coverage run --source=bunga setup.py test
+
+before_deploy:
+  - git clean -dfx
+
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: XVnC/1f8qfg6hh24Sv0VbE/ZblpmButgPy5s9Rhxx2AobC8Mm8GVNUkrPDZI808e3N4FF3PxPgFGq0bsjPEp+S7EF3OMuvJJW1yb/wXKvWzbGpXNM/QFNZFEEw42mCmBfh/FDk09bjWP6cV3oi9yHtk1fvrVL+xcJH2yTuRkENMxCLWq4erusahJTPP1C2wPJJylIWiA5cFLBhO+p8QqoOJ1OoN1G7M0ftJyx3QqkQHv+4T0vZzwqy0BK28webejn20npfDKDWGdzOzEa4L/77kfRdUbo168Yi/CZPw88/pSYtSoKI8wfiRJzQQeih00gcFZ5KmyGXQ0lPe/JZplv5kMYImyg/iMiaHbUQHUaHRSbF9DpzFeSmeEs7JXGK3RcjtJBGCJsmguGnCty+RAmVnOHy7MGZRuIe29C8Kxjf+D57WQRo5MEfElLuwlXS15fwAlnlQ6Wa7LTW59EyHXp/nlocCWtUo/h4DB+SetLCNnGEWOogfyy7GsmamTRISDlNgNa6vz2LDic8B/chRWoFTvJarCBKaZaTlT8yty4tpHx/jFtPyaqjb0rLh5NXm9w0khCBHW5/3p+Ajy1Yd03j4WjR2fGi7rKsSN2ttEQdt9HZu/dHh42pjWxn9XDHpPT4UIke/trl/zgf+9yO7iWcefnxCC0x6F4p1Asj5XBog=
+  edge: true
+  skip_existing: true
+  on:
+    tags: true
