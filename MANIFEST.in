@@ -1,0 +1,4 @@
+include LICENSE
+include Makefile
+recursive-include proto *.proto
+recursive-include tests *.py
