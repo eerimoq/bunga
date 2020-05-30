@@ -77,7 +77,7 @@ def shell(client, debug):
     commands.append('exit')
     completer = WordCompleter(commands, WORD=True)
     user_home = os.path.expanduser('~')
-    history = FileHistory(os.path.join(user_home, '.moam-history.txt'))
+    history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
 
     print("\nWelcome to the Bunga shell.\n")
 
