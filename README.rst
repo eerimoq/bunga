@@ -22,7 +22,7 @@ project`_) and execute the ``df`` command.
 
 .. code-block:: text
 
-   $ bunga shell --uri tcp://192.168.0.6:8000
+   $ bunga shell --uri tcp://192.168.0.6:28000
 
    Welcome to the Bunga shell.
 
