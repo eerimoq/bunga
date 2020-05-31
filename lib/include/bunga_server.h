@@ -83,6 +83,13 @@ struct bunga_server_t {
     } output;
 };
 
+struct bunga_server_client_output_item_t {
+    size_t offset;
+    size_t size;
+    struct bunga_server_client_output_item_t *next_p;
+    uint8_t data[1];
+};
+
 struct bunga_server_client_t {
     int client_fd;
     int keep_alive_timer_fd;
@@ -92,6 +99,10 @@ struct bunga_server_client_t {
         size_t size;
         size_t left;
     } input;
+    struct {
+        struct bunga_server_client_output_item_t *head_p;
+        struct bunga_server_client_output_item_t *tail_p;
+    } output;
     struct bunga_server_client_t *next_p;
     struct bunga_server_client_t *prev_p;
 };
