@@ -121,11 +121,11 @@ class BungaClient:
     async def _connect(self):
         while True:
             try:
-                self._reader, self._writer = await asyncio.open_connection(
-                    self._address,
-                    self._port)
+                self._reader, self._writer = await asyncio.wait_for(
+                    asyncio.open_connection(self._address, self._port),
+                    5)
                 break
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, asyncio.TimeoutError):
                 LOGGER.info("Failed to connect to '%s:%d'. Trying again in 1 second.",
                             self._address,
                             self._port)
