@@ -6,6 +6,7 @@ PREFIX ?= /usr/local
 INC += include
 INC += $(BUNGA_INC)
 CFLAGS = -Wall -O2 $(INC:%=-I%) -c
+CFLAGS += $(CFLAGS_EXTRA)
 
 .PHONY: library install clean
 
