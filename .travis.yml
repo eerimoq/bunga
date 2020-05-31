@@ -9,6 +9,7 @@ install:
 
 script:
   - coverage run --source=bunga setup.py test
+  - make -s -C lib
 
 before_deploy:
   - git clean -dfx

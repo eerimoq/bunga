@@ -1,0 +1,3 @@
+[submodule "3pp/messi"]
+	path = 3pp/messi
+	url = https://github.com/eerimoq/messi.git
