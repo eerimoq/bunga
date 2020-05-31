@@ -31,6 +31,7 @@ class Client(BungaClient):
     async def on_disconnected(self):
         print(f'Disconnected.')
         self._is_connected = False
+        self._execute_command_complete_event.set()
 
     async def on_execute_command_rsp(self, message):
         print(message.output, end='')
@@ -51,11 +52,7 @@ class Client(BungaClient):
         message.command = command
         self._execute_command_complete_event.clear()
         self.send()
-
-        try:
-            await asyncio.wait_for(self._execute_command_complete_event.wait(), 5)
-        except asyncio.TimeoutError as e:
-            print(f"Command '{command}' timed out.")
+        await self._execute_command_complete_event.wait()
 
 
 class ClientThread(threading.Thread):
