@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import threading
+import logging
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
@@ -13,17 +14,23 @@ from .bunga_client import BungaClient
 from .bunga_pb2 import ExecuteCommandRsp
 
 
+LOGGER = logging.getLogger(__file__)
+
+
 class Client(BungaClient):
 
     def __init__(self, uri, loop):
         super().__init__(uri)
         self._execute_command_complete_event = asyncio.Event(loop=loop)
+        self._is_connected = False
 
     async def on_connected(self):
-        print('Connected to the server.')
+        print(f'Connected.')
+        self._is_connected = True
 
     async def on_disconnected(self):
-        print("Disconnected from the server.")
+        print(f'Disconnected.')
+        self._is_connected = False
 
     async def on_execute_command_rsp(self, message):
         print(message.output, end='')
@@ -36,11 +43,19 @@ class Client(BungaClient):
             self._execute_command_complete_event.set()
 
     async def execute_command(self, command):
+        if not self._is_connected:
+            print(f"Can't execute command '{command}' when disconnected.")
+            return
+
         message = self.init_execute_command_req()
         message.command = command
         self._execute_command_complete_event.clear()
         self.send()
-        await asyncio.wait_for(self._execute_command_complete_event.wait(), 5)
+
+        try:
+            await asyncio.wait_for(self._execute_command_complete_event.wait(), 5)
+        except asyncio.TimeoutError as e:
+            print(f"Command '{command}' timed out.")
 
 
 class ClientThread(threading.Thread):
@@ -78,8 +93,6 @@ def shell(client):
     user_home = os.path.expanduser('~')
     history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
 
-    print("\nWelcome to the Bunga shell.\n")
-
     while True:
         try:
             line = prompt('$ ',
@@ -95,15 +108,13 @@ def shell(client):
                 continue
 
             if line == 'exit':
-                print()
-                print()
-                print("Bye!")
                 break
 
             client.execute_command(line)
 
 
 def do_shell(args):
+    LOGGER.info('Server URI: %s', args.uri)
     client = ClientThread(args.uri)
     client.start()
     shell(client)
@@ -113,6 +124,12 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-l', '--log-level',
+                        default='error',
+                        choices=[
+                            'debug', 'info', 'warning', 'error', 'critical'
+                        ],
+                        help='Set the logging level (default: %(default)s).')
     parser.add_argument('--version',
                         action='version',
                         version=__version__,
@@ -130,6 +147,9 @@ def main():
     shell_parser.set_defaults(func=do_shell)
 
     args = parser.parse_args()
+
+    level = logging.getLevelName(args.log_level.upper())
+    logging.basicConfig(level=level, format='%(asctime)s %(message)s')
 
     if args.debug:
         args.func(args)
