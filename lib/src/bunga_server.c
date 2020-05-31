@@ -306,6 +306,40 @@ static void client_output_append(struct bunga_server_client_t *self_p,
     self_p->output.tail_p = item_p;
 }
 
+static void client_write(struct bunga_server_t *self_p,
+                         struct bunga_server_client_t *client_p,
+                         uint8_t *buf_p,
+                         size_t size)
+{
+    size_t offset;
+    ssize_t res;
+
+    if (client_p->output.head_p != NULL) {
+        client_output_append(client_p, self_p, buf_p, size);
+
+        return;
+    }
+
+    offset = 0;
+
+    while (size > 0) {
+        res = write(client_p->client_fd, &buf_p[offset], size);
+
+        if (res == (ssize_t)size) {
+            break;
+        } else if (res > 0) {
+            offset += res;
+            size -= res;
+        } else if ((res == -1) && (errno == EAGAIN)) {
+            client_output_append(client_p, self_p, &buf_p[offset], size);
+            break;
+        } else {
+            client_pending_disconnect(client_p, self_p);
+            break;
+        }
+    }
+}
+
 static int handle_message_user(struct bunga_server_t *self_p,
                                struct bunga_server_client_t *client_p)
 {
@@ -350,40 +384,6 @@ static int handle_message_user(struct bunga_server_t *self_p,
     self_p->current_client_p = NULL;
 
     return (0);
-}
-
-static void client_write(struct bunga_server_t *self_p,
-                         struct bunga_server_client_t *client_p,
-                         uint8_t *buf_p,
-                         size_t size)
-{
-    size_t offset;
-    ssize_t res;
-
-    if (client_p->output.head_p != NULL) {
-        client_output_append(client_p, self_p, buf_p, size);
-
-        return;
-    }
-
-    offset = 0;
-
-    while (size > 0) {
-        res = write(client_p->client_fd, &buf_p[offset], size);
-
-        if (res == size) {
-            break;
-        } else if (res > 0) {
-            offset += res;
-            size -= res;
-        } else if ((res == -1) && (errno == EAGAIN)) {
-            client_output_append(client_p, self_p, &buf_p[offset], size);
-            break;
-        } else {
-            client_pending_disconnect(client_p, self_p);
-            break;
-        }
-    }
 }
 
 static int handle_message_ping(struct bunga_server_t *self_p,
@@ -443,7 +443,7 @@ static void process_client_socket_out(struct bunga_server_t *self_p,
                     &item_p->data[item_p->offset],
                     item_p->size);
 
-        if (res == item_p->size) {
+        if (res == (ssize_t)item_p->size) {
             next_p = item_p->next_p;
             free(item_p);
             item_p = next_p;
@@ -858,3 +858,4 @@ struct bunga_execute_command_rsp_t *bunga_server_init_execute_command_rsp(
 
     return (&self_p->output.message_p->messages.value.execute_command_rsp);
 }
+
