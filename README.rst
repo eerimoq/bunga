@@ -17,15 +17,13 @@ Installation
 The shell subcommand
 --------------------
 
-Connect to your system (in this example the `Monolinux example
-project`_) and execute the ``df`` command.
+Connect to your system (in this case the `Monolinux example project`_)
+and execute the ``df`` command.
 
 .. code-block:: text
 
-   $ bunga shell --uri tcp://192.168.0.6:28000
-
-   Welcome to the Bunga shell.
-
+   $ bunga shell
+   Connected.
    $ df
    MOUNTED ON               TOTAL      USED      FREE
    /                        53 MB      2 MB     51 MB
