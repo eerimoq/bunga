@@ -27,7 +27,8 @@ setup(name='bunga',
       packages=find_packages(exclude=['tests']),
       install_requires=[
           'prompt_toolkit',
-          'grpcio-tools'
+          'grpcio-tools',
+          'ansicolors'
       ],
       test_suite="tests",
       include_package_data=True,

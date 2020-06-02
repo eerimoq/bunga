@@ -4,16 +4,39 @@ import os
 import argparse
 import threading
 import logging
+import time
+import re
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+
+from colors import red
+from colors import yellow
+from colors import green
+from colors import cyan
 
 from .version import __version__
 from .bunga_client import BungaClient
 
 
 LOGGER = logging.getLogger(__file__)
+
+RE_ML_LOG = re.compile(r'([\d\- 0-9:]+)(\w+)( \w+)(.*)')
+RE_ERROR = re.compile(r'error', re.IGNORECASE)
+RE_WARNING = re.compile(r'warning', re.IGNORECASE)
+
+
+def print_info(text):
+    print(cyan(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
+
+
+def is_error(text):
+    return RE_ERROR.search(text)
+
+
+def is_warning(text):
+    return RE_WARNING.search(text)
 
 
 class Client(BungaClient):
@@ -28,21 +51,19 @@ class Client(BungaClient):
         self._error = ''
 
     async def on_connected(self):
-        print(f'Connected.')
+        print_info('Connected')
         self._is_connected = True
         self._connected_event.set()
 
     async def on_disconnected(self):
-        print(f'Disconnected.')
+        print_info('Disconnected')
         self._connected_event.clear()
         self._is_connected = False
         self._complete_event.set()
 
     def print_result_and_signal(self, error):
         if error:
-            print(f'ERROR({error})')
-        else:
-            print('OK')
+            print(red(f'ERROR({error})', style='bold'))
 
         self._error = error
         self._complete_event.set()
@@ -55,7 +76,27 @@ class Client(BungaClient):
             self.print_result_and_signal(message.error)
 
     async def on_log_entry_ind(self, message):
-        print(''.join(message.text))
+        header = message.text[0]
+        text = message.text[1]
+
+        mo = RE_ML_LOG.match(text)
+
+        if mo:
+            date = mo.group(1)
+            text = mo.group(2) + mo.group(3) + mo.group(4)
+
+            if mo.group(2) == 'ERROR':
+                text = red(text, style='bold')
+            elif mo.group(2) == 'WARNING':
+                text = yellow(text, style='bold')
+
+            text = yellow(date) + text
+        elif is_error(text):
+            text = red(text, style='bold')
+        elif is_warning(text):
+            test = yellow(text, style='bold')
+
+        print(green(header), text)
 
     async def on_get_file_rsp(self, message):
         if message.data:
