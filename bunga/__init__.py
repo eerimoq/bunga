@@ -49,9 +49,8 @@ class Client(BungaClient):
 
     async def on_execute_command_rsp(self, message):
         if message.output:
-            output = message.output.decode('utf-8', 'replace')
-            print(output, end='', flush=True)
-            self._command_output.append(output)
+            print(message.output, end='', flush=True)
+            self._command_output.append(message.output)
         else:
             self.print_result_and_signal(message.error)
 
