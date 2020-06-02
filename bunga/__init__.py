@@ -39,6 +39,27 @@ def is_warning(text):
     return RE_WARNING.search(text)
 
 
+def print_log_entry(header, text):
+    mo = RE_ML_LOG.match(text)
+
+    if mo:
+        date = mo.group(1)
+        text = mo.group(2) + mo.group(3) + mo.group(4)
+
+        if mo.group(2) == 'ERROR':
+            text = red(text, style='bold')
+        elif mo.group(2) == 'WARNING':
+            text = yellow(text, style='bold')
+
+        text = yellow(date) + text
+    elif is_error(text):
+        text = red(text, style='bold')
+    elif is_warning(text):
+        test = yellow(text, style='bold')
+
+    print(green(header), text, flush=True)
+
+
 class Client(BungaClient):
 
     def __init__(self, uri, loop):
@@ -49,6 +70,7 @@ class Client(BungaClient):
         self._fout = None
         self._command_output = []
         self._error = ''
+        self.print_log_entries = False
 
     async def on_connected(self):
         print_info('Connected')
@@ -76,27 +98,8 @@ class Client(BungaClient):
             self.print_result_and_signal(message.error)
 
     async def on_log_entry_ind(self, message):
-        header = message.text[0]
-        text = message.text[1]
-
-        mo = RE_ML_LOG.match(text)
-
-        if mo:
-            date = mo.group(1)
-            text = mo.group(2) + mo.group(3) + mo.group(4)
-
-            if mo.group(2) == 'ERROR':
-                text = red(text, style='bold')
-            elif mo.group(2) == 'WARNING':
-                text = yellow(text, style='bold')
-
-            text = yellow(date) + text
-        elif is_error(text):
-            text = red(text, style='bold')
-        elif is_warning(text):
-            test = yellow(text, style='bold')
-
-        print(green(header), text)
+        if self.print_log_entries:
+            print_log_entry(message.text[0], message.text[1])
 
     async def on_get_file_rsp(self, message):
         if message.data:
@@ -159,11 +162,12 @@ class Client(BungaClient):
 
 class ClientThread(threading.Thread):
 
-    def __init__(self, uri):
+    def __init__(self, uri, print_log_entries=False):
         super().__init__()
         LOGGER.info('Server URI: %s', uri)
         self._loop = asyncio.new_event_loop()
         self._client = Client(uri, self._loop)
+        self._client.print_log_entries = print_log_entries
         self.daemon = True
 
     def run(self):
@@ -248,6 +252,14 @@ def do_get(args):
     client.get(args.remotefile, localfile)
 
 
+def do_log(args):
+    client = ClientThread(args.uri, print_log_entries=True)
+    client.start()
+
+    while True:
+        time.sleep(100)
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -296,6 +308,13 @@ def main():
                             nargs='?',
                             help='The local file path.')
     get_parser.set_defaults(func=do_get)
+
+    # The log subparser.
+    log_parser = subparsers.add_parser('log')
+    log_parser.add_argument('-u' ,'--uri',
+                            default='tcp://127.0.0.1:28000',
+                            help='URI of the server (default: %(default)s)')
+    log_parser.set_defaults(func=do_log)
 
     args = parser.parse_args()
 
