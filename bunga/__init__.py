@@ -44,11 +44,12 @@ def print_log_entry(header, text):
 
     if mo:
         date = mo.group(1)
-        text = mo.group(2) + mo.group(3) + mo.group(4)
+        level = mo.group(2)
+        text = level + mo.group(3) + mo.group(4)
 
-        if mo.group(2) == 'ERROR':
+        if level in ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR']:
             text = red(text, style='bold')
-        elif mo.group(2) == 'WARNING':
+        elif level == 'WARNING':
             text = yellow(text, style='bold')
 
         text = yellow(date) + text
