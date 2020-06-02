@@ -37,19 +37,22 @@ message LogEntryInd {
 }
 
 message GetFileReq {
-    // The absolute file path.
+    // The file path relative to the root.
     string path = 1;
 }
 
 message GetFileRsp {
+    // File size. Only present in the first message.
+    int64 size = 1;
     // File data. Empty in last message.
-    bytes data = 1;
+    bytes data = 2;
     // The error message. Only present in error messages.
-    string error = 2;
+    string error = 3;
 }
 
 message PutFileReq {
-    // The absolute file path. Only part of the first message.
+    // The file path relative to the root. Only part of the first
+    // message.
     string path = 1;
     // File data. Empty in first and last message.
     bytes data = 2;

@@ -149,6 +149,7 @@ struct bunga_get_file_rsp_repeated_t {
 
 struct bunga_get_file_rsp_t {
     struct pbtools_message_base_t base;
+    int64_t size;
     struct pbtools_bytes_t data;
     char *error_p;
 };

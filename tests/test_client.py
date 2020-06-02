@@ -100,8 +100,8 @@ class ClientTest(unittest.TestCase):
         async def on_client_connected(reader, writer):
             req = await reader.readexactly(13)
             self.assertEqual(req, b'\x01\x00\x00\x09\x12\x07\n\x05/init')
-            writer.write(b'\x02\x00\x00\x08\x1a\x06\n\x041234')
-            writer.write(b'\x02\x00\x00\x08\x1a\x06\n\x045678')
+            writer.write(b'\x02\x00\x00\x0a\x1a\x08\x08\x08\x12\x041234')
+            writer.write(b'\x02\x00\x00\x08\x1a\x06\x12\x045678')
             writer.write(b'\x02\x00\x00\x02\x1a\x00')
 
             writer.close()

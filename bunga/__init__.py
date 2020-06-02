@@ -181,6 +181,13 @@ def shell(client):
             client.execute_command(line)
 
 
+def create_to_path(from_path, to_path):
+    if to_path:
+        return to_path
+    else:
+        return os.path.basename(from_path)
+
+
 def do_shell(args):
     client = ClientThread(args.uri)
     client.start()
@@ -190,13 +197,15 @@ def do_shell(args):
 def do_put(args):
     client = ClientThread(args.uri)
     client.start()
-    client.put(args.localfile, args.remotefile)
+    remotefile = create_to_path(args.localfile, args.remotefile)
+    client.put(args.localfile, remotefile)
 
 
 def do_get(args):
     client = ClientThread(args.uri)
     client.start()
-    client.get(args.remotefile, args.localfile)
+    localfile = create_to_path(args.remotefile, args.localfile)
+    client.get(args.remotefile, localfile)
 
 
 def main():
@@ -232,7 +241,9 @@ def main():
                             default='tcp://127.0.0.1:28000',
                             help='URI of the server (default: %(default)s)')
     put_parser.add_argument('localfile', help='The local file path.')
-    put_parser.add_argument('remotefile', help='The remote file path.')
+    put_parser.add_argument('remotefile',
+                            nargs='?',
+                            help='The remote file path.')
     put_parser.set_defaults(func=do_put)
 
     # The get subparser.
@@ -241,7 +252,9 @@ def main():
                             default='tcp://127.0.0.1:28000',
                             help='URI of the server (default: %(default)s)')
     get_parser.add_argument('remotefile', help='The remote file path.')
-    get_parser.add_argument('localfile', help='The local file path.')
+    get_parser.add_argument('localfile',
+                            nargs='?',
+                            help='The local file path.')
     get_parser.set_defaults(func=do_get)
 
     args = parser.parse_args()

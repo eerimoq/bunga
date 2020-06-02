@@ -779,6 +779,7 @@ void bunga_get_file_rsp_init(
     struct pbtools_heap_t *heap_p)
 {
     self_p->base.heap_p = heap_p;
+    self_p->size = 0;
     pbtools_bytes_init(&self_p->data);
     self_p->error_p = "";
 }
@@ -787,8 +788,9 @@ void bunga_get_file_rsp_encode_inner(
     struct pbtools_encoder_t *encoder_p,
     struct bunga_get_file_rsp_t *self_p)
 {
-    pbtools_encoder_write_string(encoder_p, 2, self_p->error_p);
-    pbtools_encoder_write_bytes(encoder_p, 1, &self_p->data);
+    pbtools_encoder_write_string(encoder_p, 3, self_p->error_p);
+    pbtools_encoder_write_bytes(encoder_p, 2, &self_p->data);
+    pbtools_encoder_write_int64(encoder_p, 1, self_p->size);
 }
 
 void bunga_get_file_rsp_decode_inner(
@@ -801,10 +803,14 @@ void bunga_get_file_rsp_decode_inner(
         switch (pbtools_decoder_read_tag(decoder_p, &wire_type)) {
 
         case 1:
-            pbtools_decoder_read_bytes(decoder_p, wire_type, &self_p->data);
+            self_p->size = pbtools_decoder_read_int64(decoder_p, wire_type);
             break;
 
         case 2:
+            pbtools_decoder_read_bytes(decoder_p, wire_type, &self_p->data);
+            break;
+
+        case 3:
             pbtools_decoder_read_string(decoder_p, wire_type, &self_p->error_p);
             break;
 

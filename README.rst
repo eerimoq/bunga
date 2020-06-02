@@ -34,6 +34,24 @@ and execute the ``df`` command.
    OK
    $
 
+The get subcommand
+------------------
+
+Get a file from your system.
+
+.. code-block:: text
+
+   $ bunga get init
+
+The put subcommand
+------------------
+
+Put a file on your system.
+
+.. code-block:: text
+
+   $ bunga put init
+
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga
 
