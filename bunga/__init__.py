@@ -21,6 +21,7 @@ class Client(BungaClient):
     def __init__(self, uri, loop):
         super().__init__(uri)
         self._is_connected = False
+        self._connected_event = asyncio.Event(loop=loop)
         self._complete_event = asyncio.Event(loop=loop)
         self._fout = None
         self._command_output = []
@@ -29,9 +30,11 @@ class Client(BungaClient):
     async def on_connected(self):
         print(f'Connected.')
         self._is_connected = True
+        self._connected_event.set()
 
     async def on_disconnected(self):
         print(f'Disconnected.')
+        self._connected_event.clear()
         self._is_connected = False
         self._complete_event.set()
 
@@ -66,8 +69,7 @@ class Client(BungaClient):
 
     async def execute_command(self, command):
         if not self._is_connected:
-            print(f"Can't execute command '{command}' when disconnected.")
-            return
+            await self._connected_event.wait()
 
         self._command_output = []
         message = self.init_execute_command_req()
@@ -78,7 +80,10 @@ class Client(BungaClient):
 
         return (''.join(self._command_output), self._error)
 
-    async def get_file(self, local_path, remote_path):
+    async def get(self, remote_path, local_path):
+        if not self._is_connected:
+            await self._connected_event.wait()
+
         with open(local_path, 'wb') as self._fout:
             message = self.init_get_file_req()
             message.path = remote_path
@@ -88,7 +93,10 @@ class Client(BungaClient):
 
         return self._error
 
-    async def put_file(self, local_path, remote_path):
+    async def put(self, local_path, remote_path):
+        if not self._is_connected:
+            await self._connected_event.wait()
+
         self._complete_event.clear()
 
         with open(local_path, 'rb') as fin:
@@ -113,6 +121,7 @@ class ClientThread(threading.Thread):
 
     def __init__(self, uri):
         super().__init__()
+        LOGGER.info('Server URI: %s', uri)
         self._loop = asyncio.new_event_loop()
         self._client = Client(uri, self._loop)
         self.daemon = True
@@ -124,6 +133,14 @@ class ClientThread(threading.Thread):
 
     def execute_command(self, command):
         asyncio.run_coroutine_threadsafe(self._client.execute_command(command),
+                                         self._loop).result()
+
+    def get(self, remote_path, local_path):
+        asyncio.run_coroutine_threadsafe(self._client.get(remote_path, local_path),
+                                         self._loop).result()
+
+    def put(self, local_path, remote_path):
+        asyncio.run_coroutine_threadsafe(self._client.put(local_path, remote_path),
                                          self._loop).result()
 
     async def _start(self):
@@ -165,10 +182,21 @@ def shell(client):
 
 
 def do_shell(args):
-    LOGGER.info('Server URI: %s', args.uri)
     client = ClientThread(args.uri)
     client.start()
     shell(client)
+
+
+def do_put(args):
+    client = ClientThread(args.uri)
+    client.start()
+    client.put(args.localfile, args.remotefile)
+
+
+def do_get(args):
+    client = ClientThread(args.uri)
+    client.start()
+    client.get(args.remotefile, args.localfile)
 
 
 def main():
@@ -191,11 +219,30 @@ def main():
                                        dest='subcommand')
     subparsers.required = True
 
+    # The shell subparser.
     shell_parser = subparsers.add_parser('shell')
     shell_parser.add_argument('-u' ,'--uri',
                               default='tcp://127.0.0.1:28000',
                               help='URI of the server (default: %(default)s)')
     shell_parser.set_defaults(func=do_shell)
+
+    # The put subparser.
+    put_parser = subparsers.add_parser('put')
+    put_parser.add_argument('-u' ,'--uri',
+                            default='tcp://127.0.0.1:28000',
+                            help='URI of the server (default: %(default)s)')
+    put_parser.add_argument('localfile', help='The local file path.')
+    put_parser.add_argument('remotefile', help='The remote file path.')
+    put_parser.set_defaults(func=do_put)
+
+    # The get subparser.
+    get_parser = subparsers.add_parser('get')
+    get_parser.add_argument('-u' ,'--uri',
+                            default='tcp://127.0.0.1:28000',
+                            help='URI of the server (default: %(default)s)')
+    get_parser.add_argument('remotefile', help='The remote file path.')
+    get_parser.add_argument('localfile', help='The local file path.')
+    get_parser.set_defaults(func=do_get)
 
     args = parser.parse_args()
 

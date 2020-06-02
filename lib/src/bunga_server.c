@@ -377,6 +377,20 @@ static int handle_message_user(struct bunga_server_t *self_p,
             &message_p->messages.value.execute_command_req);
         break;
 
+    case bunga_client_to_server_messages_choice_get_file_req_e:
+        self_p->on_get_file_req(
+            self_p,
+            client_p,
+            &message_p->messages.value.get_file_req);
+        break;
+
+    case bunga_client_to_server_messages_choice_put_file_req_e:
+        self_p->on_put_file_req(
+            self_p,
+            client_p,
+            &message_p->messages.value.put_file_req);
+        break;
+
     default:
         break;
     }
@@ -548,6 +562,26 @@ static void on_execute_command_req_default(
     (void)message_p;
 }
 
+static void on_get_file_req_default(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_get_file_req_t *message_p)
+{
+    (void)self_p;
+    (void)client_p;
+    (void)message_p;
+}
+
+static void on_put_file_req_default(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_put_file_req_t *message_p)
+{
+    (void)self_p;
+    (void)client_p;
+    (void)message_p;
+}
+
 static int encode_user_message(struct bunga_server_t *self_p)
 {
     int payload_size;
@@ -606,6 +640,8 @@ int bunga_server_init(
     bunga_server_on_client_connected_t on_client_connected,
     bunga_server_on_client_disconnected_t on_client_disconnected,
     bunga_server_on_execute_command_req_t on_execute_command_req,
+    bunga_server_on_get_file_req_t on_get_file_req,
+    bunga_server_on_put_file_req_t on_put_file_req,
     int epoll_fd,
     messi_epoll_ctl_t epoll_ctl)
 {
@@ -616,6 +652,14 @@ int bunga_server_init(
 
     if (on_execute_command_req == NULL) {
         on_execute_command_req = on_execute_command_req_default;
+    }
+
+    if (on_get_file_req == NULL) {
+        on_get_file_req = on_get_file_req_default;
+    }
+
+    if (on_put_file_req == NULL) {
+        on_put_file_req = on_put_file_req_default;
     }
 
     if (on_client_connected == NULL) {
@@ -640,6 +684,8 @@ int bunga_server_init(
     }
 
     self_p->on_execute_command_req = on_execute_command_req;
+    self_p->on_get_file_req = on_get_file_req;
+    self_p->on_put_file_req = on_put_file_req;
     self_p->epoll_fd = epoll_fd;
     self_p->epoll_ctl = epoll_ctl;
 
@@ -857,5 +903,32 @@ struct bunga_execute_command_rsp_t *bunga_server_init_execute_command_rsp(
     bunga_server_to_client_messages_execute_command_rsp_init(self_p->output.message_p);
 
     return (&self_p->output.message_p->messages.value.execute_command_rsp);
+}
+
+struct bunga_log_entry_ind_t *bunga_server_init_log_entry_ind(
+    struct bunga_server_t *self_p)
+{
+    bunga_server_new_output_message(self_p);
+    bunga_server_to_client_messages_log_entry_ind_init(self_p->output.message_p);
+
+    return (&self_p->output.message_p->messages.value.log_entry_ind);
+}
+
+struct bunga_get_file_rsp_t *bunga_server_init_get_file_rsp(
+    struct bunga_server_t *self_p)
+{
+    bunga_server_new_output_message(self_p);
+    bunga_server_to_client_messages_get_file_rsp_init(self_p->output.message_p);
+
+    return (&self_p->output.message_p->messages.value.get_file_rsp);
+}
+
+struct bunga_put_file_rsp_t *bunga_server_init_put_file_rsp(
+    struct bunga_server_t *self_p)
+{
+    bunga_server_new_output_message(self_p);
+    bunga_server_to_client_messages_put_file_rsp_init(self_p->output.message_p);
+
+    return (&self_p->output.message_p->messages.value.put_file_rsp);
 }
 

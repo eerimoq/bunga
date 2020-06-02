@@ -41,6 +41,16 @@ typedef void (*bunga_server_on_execute_command_req_t)(
     struct bunga_server_client_t *client_p,
     struct bunga_execute_command_req_t *message_p);
 
+typedef void (*bunga_server_on_get_file_req_t)(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_get_file_req_t *message_p);
+
+typedef void (*bunga_server_on_put_file_req_t)(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_put_file_req_t *message_p);
+
 enum bunga_server_client_input_state_t {
     bunga_server_client_input_state_header_t = 0,
     bunga_server_client_input_state_payload_t
@@ -62,6 +72,8 @@ struct bunga_server_t {
     bunga_server_on_client_connected_t on_client_connected;
     bunga_server_on_client_disconnected_t on_client_disconnected;
     bunga_server_on_execute_command_req_t on_execute_command_req;
+    bunga_server_on_get_file_req_t on_get_file_req;
+    bunga_server_on_put_file_req_t on_put_file_req;
     int epoll_fd;
     messi_epoll_ctl_t epoll_ctl;
     int listener_fd;
@@ -126,6 +138,8 @@ int bunga_server_init(
     bunga_server_on_client_connected_t on_client_connected,
     bunga_server_on_client_disconnected_t on_client_disconnected,
     bunga_server_on_execute_command_req_t on_execute_command_req,
+    bunga_server_on_get_file_req_t on_get_file_req,
+    bunga_server_on_put_file_req_t on_put_file_req,
     int epoll_fd,
     messi_epoll_ctl_t epoll_ctl);
 
@@ -175,6 +189,27 @@ void bunga_server_disconnect(
  * to send it.
  */
 struct bunga_execute_command_rsp_t *bunga_server_init_execute_command_rsp(
+    struct bunga_server_t *self_p);
+
+/**
+ * Prepare a log_entry_ind message. Call `send()`, `reply()` or `broadcast()`
+ * to send it.
+ */
+struct bunga_log_entry_ind_t *bunga_server_init_log_entry_ind(
+    struct bunga_server_t *self_p);
+
+/**
+ * Prepare a get_file_rsp message. Call `send()`, `reply()` or `broadcast()`
+ * to send it.
+ */
+struct bunga_get_file_rsp_t *bunga_server_init_get_file_rsp(
+    struct bunga_server_t *self_p);
+
+/**
+ * Prepare a put_file_rsp message. Call `send()`, `reply()` or `broadcast()`
+ * to send it.
+ */
+struct bunga_put_file_rsp_t *bunga_server_init_put_file_rsp(
     struct bunga_server_t *self_p);
 
 #endif

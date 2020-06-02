@@ -51,11 +51,40 @@ struct bunga_execute_command_req_t {
 };
 
 /**
+ * Message bunga.GetFileReq.
+ */
+struct bunga_get_file_req_repeated_t {
+    int length;
+    struct bunga_get_file_req_t *items_p;
+};
+
+struct bunga_get_file_req_t {
+    struct pbtools_message_base_t base;
+    char *path_p;
+};
+
+/**
+ * Message bunga.PutFileReq.
+ */
+struct bunga_put_file_req_repeated_t {
+    int length;
+    struct bunga_put_file_req_t *items_p;
+};
+
+struct bunga_put_file_req_t {
+    struct pbtools_message_base_t base;
+    char *path_p;
+    struct pbtools_bytes_t data;
+};
+
+/**
  * Enum bunga.ClientToServer.messages.
  */
 enum bunga_client_to_server_messages_choice_e {
     bunga_client_to_server_messages_choice_none_e = 0,
-    bunga_client_to_server_messages_choice_execute_command_req_e = 1
+    bunga_client_to_server_messages_choice_execute_command_req_e = 1,
+    bunga_client_to_server_messages_choice_get_file_req_e = 2,
+    bunga_client_to_server_messages_choice_put_file_req_e = 3
 };
 
 /**
@@ -65,6 +94,8 @@ struct bunga_client_to_server_messages_oneof_t {
     enum bunga_client_to_server_messages_choice_e choice;
     union {
         struct bunga_execute_command_req_t execute_command_req;
+        struct bunga_get_file_req_t get_file_req;
+        struct bunga_put_file_req_t put_file_req;
     } value;
 };
 
@@ -82,15 +113,6 @@ struct bunga_client_to_server_t {
 };
 
 /**
- * Enum bunga.ExecuteCommandRsp.Kind.
- */
-enum bunga_execute_command_rsp_kind_e {
-    bunga_execute_command_rsp_kind_ok_e = 0,
-    bunga_execute_command_rsp_kind_error_e = 1,
-    bunga_execute_command_rsp_kind_output_e = 2
-};
-
-/**
  * Message bunga.ExecuteCommandRsp.
  */
 struct bunga_execute_command_rsp_repeated_t {
@@ -100,8 +122,47 @@ struct bunga_execute_command_rsp_repeated_t {
 
 struct bunga_execute_command_rsp_t {
     struct pbtools_message_base_t base;
-    enum bunga_execute_command_rsp_kind_e kind;
-    char *output_p;
+    struct pbtools_bytes_t output;
+    char *error_p;
+};
+
+/**
+ * Message bunga.LogEntryInd.
+ */
+struct bunga_log_entry_ind_repeated_t {
+    int length;
+    struct bunga_log_entry_ind_t *items_p;
+};
+
+struct bunga_log_entry_ind_t {
+    struct pbtools_message_base_t base;
+    struct pbtools_repeated_string_t text;
+};
+
+/**
+ * Message bunga.GetFileRsp.
+ */
+struct bunga_get_file_rsp_repeated_t {
+    int length;
+    struct bunga_get_file_rsp_t *items_p;
+};
+
+struct bunga_get_file_rsp_t {
+    struct pbtools_message_base_t base;
+    struct pbtools_bytes_t data;
+    char *error_p;
+};
+
+/**
+ * Message bunga.PutFileRsp.
+ */
+struct bunga_put_file_rsp_repeated_t {
+    int length;
+    struct bunga_put_file_rsp_t *items_p;
+};
+
+struct bunga_put_file_rsp_t {
+    struct pbtools_message_base_t base;
     char *error_p;
 };
 
@@ -110,7 +171,10 @@ struct bunga_execute_command_rsp_t {
  */
 enum bunga_server_to_client_messages_choice_e {
     bunga_server_to_client_messages_choice_none_e = 0,
-    bunga_server_to_client_messages_choice_execute_command_rsp_e = 1
+    bunga_server_to_client_messages_choice_execute_command_rsp_e = 1,
+    bunga_server_to_client_messages_choice_log_entry_ind_e = 2,
+    bunga_server_to_client_messages_choice_get_file_rsp_e = 3,
+    bunga_server_to_client_messages_choice_put_file_rsp_e = 4
 };
 
 /**
@@ -120,6 +184,9 @@ struct bunga_server_to_client_messages_oneof_t {
     enum bunga_server_to_client_messages_choice_e choice;
     union {
         struct bunga_execute_command_rsp_t execute_command_rsp;
+        struct bunga_log_entry_ind_t log_entry_ind;
+        struct bunga_get_file_rsp_t get_file_rsp;
+        struct bunga_put_file_rsp_t put_file_rsp;
     } value;
 };
 
@@ -154,7 +221,49 @@ int bunga_execute_command_req_decode(
     const uint8_t *encoded_p,
     size_t size);
 
+/**
+ * Encoding and decoding of bunga.GetFileReq.
+ */
+struct bunga_get_file_req_t *
+bunga_get_file_req_new(
+    void *workspace_p,
+    size_t size);
+
+int bunga_get_file_req_encode(
+    struct bunga_get_file_req_t *self_p,
+    uint8_t *encoded_p,
+    size_t size);
+
+int bunga_get_file_req_decode(
+    struct bunga_get_file_req_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size);
+
+/**
+ * Encoding and decoding of bunga.PutFileReq.
+ */
+struct bunga_put_file_req_t *
+bunga_put_file_req_new(
+    void *workspace_p,
+    size_t size);
+
+int bunga_put_file_req_encode(
+    struct bunga_put_file_req_t *self_p,
+    uint8_t *encoded_p,
+    size_t size);
+
+int bunga_put_file_req_decode(
+    struct bunga_put_file_req_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size);
+
 void bunga_client_to_server_messages_execute_command_req_init(
+    struct bunga_client_to_server_t *self_p);
+
+void bunga_client_to_server_messages_get_file_req_init(
+    struct bunga_client_to_server_t *self_p);
+
+void bunga_client_to_server_messages_put_file_req_init(
     struct bunga_client_to_server_t *self_p);
 
 /**
@@ -193,7 +302,74 @@ int bunga_execute_command_rsp_decode(
     const uint8_t *encoded_p,
     size_t size);
 
+int bunga_log_entry_ind_text_alloc(
+    struct bunga_log_entry_ind_t *self_p,
+    int length);
+
+/**
+ * Encoding and decoding of bunga.LogEntryInd.
+ */
+struct bunga_log_entry_ind_t *
+bunga_log_entry_ind_new(
+    void *workspace_p,
+    size_t size);
+
+int bunga_log_entry_ind_encode(
+    struct bunga_log_entry_ind_t *self_p,
+    uint8_t *encoded_p,
+    size_t size);
+
+int bunga_log_entry_ind_decode(
+    struct bunga_log_entry_ind_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size);
+
+/**
+ * Encoding and decoding of bunga.GetFileRsp.
+ */
+struct bunga_get_file_rsp_t *
+bunga_get_file_rsp_new(
+    void *workspace_p,
+    size_t size);
+
+int bunga_get_file_rsp_encode(
+    struct bunga_get_file_rsp_t *self_p,
+    uint8_t *encoded_p,
+    size_t size);
+
+int bunga_get_file_rsp_decode(
+    struct bunga_get_file_rsp_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size);
+
+/**
+ * Encoding and decoding of bunga.PutFileRsp.
+ */
+struct bunga_put_file_rsp_t *
+bunga_put_file_rsp_new(
+    void *workspace_p,
+    size_t size);
+
+int bunga_put_file_rsp_encode(
+    struct bunga_put_file_rsp_t *self_p,
+    uint8_t *encoded_p,
+    size_t size);
+
+int bunga_put_file_rsp_decode(
+    struct bunga_put_file_rsp_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size);
+
 void bunga_server_to_client_messages_execute_command_rsp_init(
+    struct bunga_server_to_client_t *self_p);
+
+void bunga_server_to_client_messages_log_entry_ind_init(
+    struct bunga_server_to_client_t *self_p);
+
+void bunga_server_to_client_messages_get_file_rsp_init(
+    struct bunga_server_to_client_t *self_p);
+
+void bunga_server_to_client_messages_put_file_rsp_init(
     struct bunga_server_to_client_t *self_p);
 
 /**
@@ -238,6 +414,50 @@ void bunga_execute_command_req_decode_repeated_inner(
     struct pbtools_repeated_info_t *repeated_info_p,
     struct bunga_execute_command_req_repeated_t *repeated_p);
 
+void bunga_get_file_req_init(
+    struct bunga_get_file_req_t *self_p,
+    struct pbtools_heap_t *heap_p);
+
+void bunga_get_file_req_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_get_file_req_t *self_p);
+
+void bunga_get_file_req_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_get_file_req_t *self_p);
+
+void bunga_get_file_req_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_get_file_req_repeated_t *repeated_p);
+
+void bunga_get_file_req_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_get_file_req_repeated_t *repeated_p);
+
+void bunga_put_file_req_init(
+    struct bunga_put_file_req_t *self_p,
+    struct pbtools_heap_t *heap_p);
+
+void bunga_put_file_req_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_put_file_req_t *self_p);
+
+void bunga_put_file_req_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_put_file_req_t *self_p);
+
+void bunga_put_file_req_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_put_file_req_repeated_t *repeated_p);
+
+void bunga_put_file_req_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_put_file_req_repeated_t *repeated_p);
+
 void bunga_client_to_server_init(
     struct bunga_client_to_server_t *self_p,
     struct pbtools_heap_t *heap_p);
@@ -281,6 +501,72 @@ void bunga_execute_command_rsp_decode_repeated_inner(
     struct pbtools_decoder_t *decoder_p,
     struct pbtools_repeated_info_t *repeated_info_p,
     struct bunga_execute_command_rsp_repeated_t *repeated_p);
+
+void bunga_log_entry_ind_init(
+    struct bunga_log_entry_ind_t *self_p,
+    struct pbtools_heap_t *heap_p);
+
+void bunga_log_entry_ind_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_log_entry_ind_t *self_p);
+
+void bunga_log_entry_ind_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_log_entry_ind_t *self_p);
+
+void bunga_log_entry_ind_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_log_entry_ind_repeated_t *repeated_p);
+
+void bunga_log_entry_ind_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_log_entry_ind_repeated_t *repeated_p);
+
+void bunga_get_file_rsp_init(
+    struct bunga_get_file_rsp_t *self_p,
+    struct pbtools_heap_t *heap_p);
+
+void bunga_get_file_rsp_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_get_file_rsp_t *self_p);
+
+void bunga_get_file_rsp_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_get_file_rsp_t *self_p);
+
+void bunga_get_file_rsp_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_get_file_rsp_repeated_t *repeated_p);
+
+void bunga_get_file_rsp_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_get_file_rsp_repeated_t *repeated_p);
+
+void bunga_put_file_rsp_init(
+    struct bunga_put_file_rsp_t *self_p,
+    struct pbtools_heap_t *heap_p);
+
+void bunga_put_file_rsp_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_put_file_rsp_t *self_p);
+
+void bunga_put_file_rsp_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_put_file_rsp_t *self_p);
+
+void bunga_put_file_rsp_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_put_file_rsp_repeated_t *repeated_p);
+
+void bunga_put_file_rsp_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_put_file_rsp_repeated_t *repeated_p);
 
 void bunga_server_to_client_init(
     struct bunga_server_to_client_t *self_p,
