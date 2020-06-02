@@ -11,7 +11,6 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
 from .version import __version__
 from .bunga_client import BungaClient
-from .bunga_pb2 import ExecuteCommandRsp
 
 
 LOGGER = logging.getLogger(__file__)
@@ -21,8 +20,11 @@ class Client(BungaClient):
 
     def __init__(self, uri, loop):
         super().__init__(uri)
-        self._execute_command_complete_event = asyncio.Event(loop=loop)
         self._is_connected = False
+        self._complete_event = asyncio.Event(loop=loop)
+        self._fout = None
+        self._command_output = []
+        self._error = ''
 
     async def on_connected(self):
         print(f'Connected.')
@@ -31,28 +33,80 @@ class Client(BungaClient):
     async def on_disconnected(self):
         print(f'Disconnected.')
         self._is_connected = False
-        self._execute_command_complete_event.set()
+        self._complete_event.set()
+
+    def print_result_and_signal(self, error):
+        if error:
+            print(f'ERROR({error})')
+        else:
+            print('OK')
+
+        self._error = error
+        self._complete_event.set()
 
     async def on_execute_command_rsp(self, message):
-        print(message.output, end='')
+        if message.output:
+            output = message.output.decode('utf-8', 'replace')
+            print(output, end='', flush=True)
+            self._command_output.append(output)
+        else:
+            self.print_result_and_signal(message.error)
 
-        if message.kind == ExecuteCommandRsp.OK:
-            print('OK')
-            self._execute_command_complete_event.set()
-        elif message.kind == ExecuteCommandRsp.ERROR:
-            print(f'ERROR({message.error})')
-            self._execute_command_complete_event.set()
+    async def on_log_entry_ind(self, message):
+        print(''.join(message.text))
+
+    async def on_get_file_rsp(self, message):
+        if message.data:
+            self._fout.write(message.data)
+        else:
+            self.print_result_and_signal(message.error)
+
+    async def on_put_file_rsp(self, message):
+        self.print_result_and_signal(message.error)
 
     async def execute_command(self, command):
         if not self._is_connected:
             print(f"Can't execute command '{command}' when disconnected.")
             return
 
+        self._command_output = []
         message = self.init_execute_command_req()
         message.command = command
-        self._execute_command_complete_event.clear()
+        self._complete_event.clear()
         self.send()
-        await self._execute_command_complete_event.wait()
+        await self._complete_event.wait()
+
+        return (''.join(self._command_output), self._error)
+
+    async def get_file(self, local_path, remote_path):
+        with open(local_path, 'wb') as self._fout:
+            message = self.init_get_file_req()
+            message.path = remote_path
+            self._complete_event.clear()
+            self.send()
+            await self._complete_event.wait()
+
+        return self._error
+
+    async def put_file(self, local_path, remote_path):
+        self._complete_event.clear()
+
+        with open(local_path, 'rb') as fin:
+            message = self.init_put_file_req()
+            message.path = remote_path
+            self.send()
+
+            while True:
+                message = self.init_put_file_req()
+                message.data = fin.read(64)
+                self.send()
+
+                if not message.data:
+                    break
+
+        await self._complete_event.wait()
+
+        return self._error
 
 
 class ClientThread(threading.Thread):

@@ -5,33 +5,57 @@ package bunga;
 message ClientToServer {
     oneof messages {
         ExecuteCommandReq execute_command_req = 1;
+        GetFileReq get_file_req = 2;
+        PutFileReq put_file_req = 3;
     }
 }
 
 message ServerToClient {
     oneof messages {
         ExecuteCommandRsp execute_command_rsp = 1;
+        LogEntryInd log_entry_ind = 2;
+        GetFileRsp get_file_rsp = 3;
+        PutFileRsp put_file_rsp = 4;
     }
 }
 
 message ExecuteCommandReq {
     // The command string, as "i2c scan /dev/i2c1".
-    string command = 2;
+    string command = 1;
 }
 
 message ExecuteCommandRsp {
-    enum Kind {
-        // The command was successful.
-        OK = 0;
-        // The command failed.
-        ERROR = 1;
-        // The command not yet completed. Only contains output.
-        OUTPUT = 2;
-    }
-
-    Kind kind = 1;
-    string output = 2;
-
+    // Command output. Empty in the last message.
+    bytes output = 1;
     // The error message. Only present in error messages.
-    string error = 3;
+    string error = 2;
+}
+
+message LogEntryInd {
+    // A single log entry.
+    repeated string text = 1;
+}
+
+message GetFileReq {
+    // The absolute file path.
+    string path = 1;
+}
+
+message GetFileRsp {
+    // File data. Empty in last message.
+    bytes data = 1;
+    // The error message. Only present in error messages.
+    string error = 2;
+}
+
+message PutFileReq {
+    // The absolute file path. Only part of the first message.
+    string path = 1;
+    // File data. Empty in first and last message.
+    bytes data = 2;
+}
+
+message PutFileRsp {
+    // An error occurred if this is not the empty string.
+    string error = 1;
 }

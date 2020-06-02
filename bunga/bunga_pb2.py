@@ -20,36 +20,10 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bunga',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"U\n\x0e\x43lientToServer\x12\x37\n\x13\x65xecute_command_req\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x42\n\n\x08messages\"U\n\x0eServerToClient\x12\x37\n\x13\x65xecute_command_rsp\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x42\n\n\x08messages\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x02 \x01(\t\"\x86\x01\n\x11\x45xecuteCommandRsp\x12+\n\x04kind\x18\x01 \x01(\x0e\x32\x1d.bunga.ExecuteCommandRsp.Kind\x12\x0e\n\x06output\x18\x02 \x01(\t\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"%\n\x04Kind\x12\x06\n\x02OK\x10\x00\x12\t\n\x05\x45RROR\x10\x01\x12\n\n\x06OUTPUT\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xab\x01\n\x0e\x43lientToServer\x12\x37\n\x13\x65xecute_command_req\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x02 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\xd8\x01\n\x0eServerToClient\x12\x37\n\x13\x65xecute_command_rsp\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x02 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"\x1a\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\")\n\nGetFileRsp\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"(\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\"\x1b\n\nPutFileRsp\x12\r\n\x05\x65rror\x18\x01 \x01(\tb\x06proto3')
 )
 
 
-
-_EXECUTECOMMANDRSP_KIND = _descriptor.EnumDescriptor(
-  name='Kind',
-  full_name='bunga.ExecuteCommandRsp.Kind',
-  filename=None,
-  file=DESCRIPTOR,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='OK', index=0, number=0,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='ERROR', index=1, number=1,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='OUTPUT', index=2, number=2,
-      serialized_options=None,
-      type=None),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=332,
-  serialized_end=369,
-)
-_sym_db.RegisterEnumDescriptor(_EXECUTECOMMANDRSP_KIND)
 
 
 _CLIENTTOSERVER = _descriptor.Descriptor(
@@ -62,6 +36,20 @@ _CLIENTTOSERVER = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='execute_command_req', full_name='bunga.ClientToServer.execute_command_req', index=0,
       number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='get_file_req', full_name='bunga.ClientToServer.get_file_req', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='put_file_req', full_name='bunga.ClientToServer.put_file_req', index=2,
+      number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -81,8 +69,8 @@ _CLIENTTOSERVER = _descriptor.Descriptor(
       name='messages', full_name='bunga.ClientToServer.messages',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=22,
-  serialized_end=107,
+  serialized_start=23,
+  serialized_end=194,
 )
 
 
@@ -96,6 +84,27 @@ _SERVERTOCLIENT = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='execute_command_rsp', full_name='bunga.ServerToClient.execute_command_rsp', index=0,
       number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='log_entry_ind', full_name='bunga.ServerToClient.log_entry_ind', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='get_file_rsp', full_name='bunga.ServerToClient.get_file_rsp', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='put_file_rsp', full_name='bunga.ServerToClient.put_file_rsp', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -115,8 +124,8 @@ _SERVERTOCLIENT = _descriptor.Descriptor(
       name='messages', full_name='bunga.ServerToClient.messages',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=109,
-  serialized_end=194,
+  serialized_start=197,
+  serialized_end=413,
 )
 
 
@@ -129,7 +138,7 @@ _EXECUTECOMMANDREQ = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='command', full_name='bunga.ExecuteCommandReq.command', index=0,
-      number=2, type=9, cpp_type=9, label=1,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -146,8 +155,8 @@ _EXECUTECOMMANDREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=196,
-  serialized_end=232,
+  serialized_start=415,
+  serialized_end=451,
 )
 
 
@@ -159,22 +168,15 @@ _EXECUTECOMMANDRSP = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='kind', full_name='bunga.ExecuteCommandRsp.kind', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
+      name='output', full_name='bunga.ExecuteCommandRsp.output', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output', full_name='bunga.ExecuteCommandRsp.output', index=1,
+      name='error', full_name='bunga.ExecuteCommandRsp.error', index=1,
       number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='error', full_name='bunga.ExecuteCommandRsp.error', index=2,
-      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -184,7 +186,6 @@ _EXECUTECOMMANDRSP = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _EXECUTECOMMANDRSP_KIND,
   ],
   serialized_options=None,
   is_extendable=False,
@@ -192,24 +193,216 @@ _EXECUTECOMMANDRSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=235,
-  serialized_end=369,
+  serialized_start=453,
+  serialized_end=503,
+)
+
+
+_LOGENTRYIND = _descriptor.Descriptor(
+  name='LogEntryInd',
+  full_name='bunga.LogEntryInd',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='text', full_name='bunga.LogEntryInd.text', index=0,
+      number=1, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=505,
+  serialized_end=532,
+)
+
+
+_GETFILEREQ = _descriptor.Descriptor(
+  name='GetFileReq',
+  full_name='bunga.GetFileReq',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='path', full_name='bunga.GetFileReq.path', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=534,
+  serialized_end=560,
+)
+
+
+_GETFILERSP = _descriptor.Descriptor(
+  name='GetFileRsp',
+  full_name='bunga.GetFileRsp',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='data', full_name='bunga.GetFileRsp.data', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='error', full_name='bunga.GetFileRsp.error', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=562,
+  serialized_end=603,
+)
+
+
+_PUTFILEREQ = _descriptor.Descriptor(
+  name='PutFileReq',
+  full_name='bunga.PutFileReq',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='path', full_name='bunga.PutFileReq.path', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='data', full_name='bunga.PutFileReq.data', index=1,
+      number=2, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=605,
+  serialized_end=645,
+)
+
+
+_PUTFILERSP = _descriptor.Descriptor(
+  name='PutFileRsp',
+  full_name='bunga.PutFileRsp',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='error', full_name='bunga.PutFileRsp.error', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=647,
+  serialized_end=674,
 )
 
 _CLIENTTOSERVER.fields_by_name['execute_command_req'].message_type = _EXECUTECOMMANDREQ
+_CLIENTTOSERVER.fields_by_name['get_file_req'].message_type = _GETFILEREQ
+_CLIENTTOSERVER.fields_by_name['put_file_req'].message_type = _PUTFILEREQ
 _CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
   _CLIENTTOSERVER.fields_by_name['execute_command_req'])
 _CLIENTTOSERVER.fields_by_name['execute_command_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
+_CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
+  _CLIENTTOSERVER.fields_by_name['get_file_req'])
+_CLIENTTOSERVER.fields_by_name['get_file_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
+_CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
+  _CLIENTTOSERVER.fields_by_name['put_file_req'])
+_CLIENTTOSERVER.fields_by_name['put_file_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
 _SERVERTOCLIENT.fields_by_name['execute_command_rsp'].message_type = _EXECUTECOMMANDRSP
+_SERVERTOCLIENT.fields_by_name['log_entry_ind'].message_type = _LOGENTRYIND
+_SERVERTOCLIENT.fields_by_name['get_file_rsp'].message_type = _GETFILERSP
+_SERVERTOCLIENT.fields_by_name['put_file_rsp'].message_type = _PUTFILERSP
 _SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
   _SERVERTOCLIENT.fields_by_name['execute_command_rsp'])
 _SERVERTOCLIENT.fields_by_name['execute_command_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
-_EXECUTECOMMANDRSP.fields_by_name['kind'].enum_type = _EXECUTECOMMANDRSP_KIND
-_EXECUTECOMMANDRSP_KIND.containing_type = _EXECUTECOMMANDRSP
+_SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
+  _SERVERTOCLIENT.fields_by_name['log_entry_ind'])
+_SERVERTOCLIENT.fields_by_name['log_entry_ind'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
+_SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
+  _SERVERTOCLIENT.fields_by_name['get_file_rsp'])
+_SERVERTOCLIENT.fields_by_name['get_file_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
+_SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
+  _SERVERTOCLIENT.fields_by_name['put_file_rsp'])
+_SERVERTOCLIENT.fields_by_name['put_file_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
 DESCRIPTOR.message_types_by_name['ClientToServer'] = _CLIENTTOSERVER
 DESCRIPTOR.message_types_by_name['ServerToClient'] = _SERVERTOCLIENT
 DESCRIPTOR.message_types_by_name['ExecuteCommandReq'] = _EXECUTECOMMANDREQ
 DESCRIPTOR.message_types_by_name['ExecuteCommandRsp'] = _EXECUTECOMMANDRSP
+DESCRIPTOR.message_types_by_name['LogEntryInd'] = _LOGENTRYIND
+DESCRIPTOR.message_types_by_name['GetFileReq'] = _GETFILEREQ
+DESCRIPTOR.message_types_by_name['GetFileRsp'] = _GETFILERSP
+DESCRIPTOR.message_types_by_name['PutFileReq'] = _PUTFILEREQ
+DESCRIPTOR.message_types_by_name['PutFileRsp'] = _PUTFILERSP
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 ClientToServer = _reflection.GeneratedProtocolMessageType('ClientToServer', (_message.Message,), dict(
@@ -239,6 +432,41 @@ ExecuteCommandRsp = _reflection.GeneratedProtocolMessageType('ExecuteCommandRsp'
   # @@protoc_insertion_point(class_scope:bunga.ExecuteCommandRsp)
   ))
 _sym_db.RegisterMessage(ExecuteCommandRsp)
+
+LogEntryInd = _reflection.GeneratedProtocolMessageType('LogEntryInd', (_message.Message,), dict(
+  DESCRIPTOR = _LOGENTRYIND,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.LogEntryInd)
+  ))
+_sym_db.RegisterMessage(LogEntryInd)
+
+GetFileReq = _reflection.GeneratedProtocolMessageType('GetFileReq', (_message.Message,), dict(
+  DESCRIPTOR = _GETFILEREQ,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.GetFileReq)
+  ))
+_sym_db.RegisterMessage(GetFileReq)
+
+GetFileRsp = _reflection.GeneratedProtocolMessageType('GetFileRsp', (_message.Message,), dict(
+  DESCRIPTOR = _GETFILERSP,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.GetFileRsp)
+  ))
+_sym_db.RegisterMessage(GetFileRsp)
+
+PutFileReq = _reflection.GeneratedProtocolMessageType('PutFileReq', (_message.Message,), dict(
+  DESCRIPTOR = _PUTFILEREQ,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.PutFileReq)
+  ))
+_sym_db.RegisterMessage(PutFileReq)
+
+PutFileRsp = _reflection.GeneratedProtocolMessageType('PutFileRsp', (_message.Message,), dict(
+  DESCRIPTOR = _PUTFILERSP,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.PutFileRsp)
+  ))
+_sym_db.RegisterMessage(PutFileRsp)
 
 
 # @@protoc_insertion_point(module_scope)

@@ -7,3 +7,4 @@ dist/
 *.pyc
 *.o
 *.a
+/get_file.txt
