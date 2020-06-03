@@ -27,6 +27,41 @@ RE_ERROR = re.compile(r'error', re.IGNORECASE)
 RE_WARNING = re.compile(r'warning', re.IGNORECASE)
 
 
+class StandardFormatter:
+
+    def write(self, text):
+        print(text, end='', flush=True)
+
+    def flush(self):
+        pass
+
+
+class LogFormatter:
+
+    def __init__(self):
+        self._data = ''
+
+    def write(self, text):
+        lines = (self._data + text).split('\n')
+
+        for line in lines[:-1]:
+            print_log_entry(line)
+
+        self._data = lines[-1]
+
+    def flush(self):
+        # This should never happen.
+        if self._data:
+            print(self._data, flush=True)
+
+
+def find_formatter(command):
+    if command == 'dmesg':
+        return LogFormatter()
+    else:
+        return StandardFormatter()
+
+
 def print_info(text):
     print(cyan(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
 
@@ -39,7 +74,10 @@ def is_warning(text):
     return RE_WARNING.search(text)
 
 
-def print_log_entry(header, text):
+def print_log_entry(entry):
+    header, text = entry.split(']', 1)
+    header += ']'
+
     mo = RE_ML_LOG.match(text)
 
     if mo:
@@ -58,7 +96,7 @@ def print_log_entry(header, text):
     elif is_warning(text):
         test = yellow(text, style='bold')
 
-    print(green(header), text, flush=True)
+    print(green(header) + text, flush=True)
 
 
 class Client(BungaClient):
@@ -69,6 +107,7 @@ class Client(BungaClient):
         self._connected_event = asyncio.Event(loop=loop)
         self._complete_event = asyncio.Event(loop=loop)
         self._fout = None
+        self._command_formatter = None
         self._command_output = []
         self._error = ''
         self.print_log_entries = False
@@ -93,14 +132,15 @@ class Client(BungaClient):
 
     async def on_execute_command_rsp(self, message):
         if message.output:
-            print(message.output, end='', flush=True)
+            self._command_formatter.write(message.output)
             self._command_output.append(message.output)
         else:
+            self._command_formatter.flush()
             self.print_result_and_signal(message.error)
 
     async def on_log_entry_ind(self, message):
         if self.print_log_entries:
-            print_log_entry(message.text[0], message.text[1])
+            print_log_entry(''.join(message.text))
 
     async def on_get_file_rsp(self, message):
         if message.data:
@@ -115,6 +155,7 @@ class Client(BungaClient):
         if not self._is_connected:
             await self._connected_event.wait()
 
+        self._command_formatter = find_formatter(command)
         self._command_output = []
         message = self.init_execute_command_req()
         message.command = command

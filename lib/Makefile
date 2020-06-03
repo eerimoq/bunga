@@ -23,4 +23,5 @@ clean:
 $(LIBRARY):
 	$(CC) $(CFLAGS) src/bunga.c -o bunga.o
 	$(CC) $(CFLAGS) src/bunga_server.c -o bunga_server.o
-	$(AR) cr $(LIBRARY) bunga.o bunga_server.o
+	$(CC) $(CFLAGS) src/bunga_server_linux.c -o bunga_server_linux.o
+	$(AR) cr $(LIBRARY) bunga.o bunga_server.o bunga_server_linux.o

@@ -1,4 +1,5 @@
 |buildstatus|_
+|coverage|_
 
 Bunga
 =====
@@ -54,5 +55,8 @@ Put a file on your system.
 
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga
+
+.. |coverage| image:: https://coveralls.io/repos/github/eerimoq/bunga/badge.svg?branch=master
+.. _coverage: https://coveralls.io/github/eerimoq/bunga
 
 .. _Monolinux example project: https://github.com/eerimoq/monolinux-example-project

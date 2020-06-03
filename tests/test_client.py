@@ -1,6 +1,13 @@
+import sys
 import logging
 import asyncio
 import unittest
+from unittest.mock import patch
+from io import StringIO
+
+from colors import red
+from colors import green
+from colors import yellow
 
 import bunga
 
@@ -155,3 +162,33 @@ class ClientTest(unittest.TestCase):
 
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
+
+    def test_execute_command_log_formatter(self):
+        formatter = bunga.find_formatter('dmesg')
+        text = (
+            '[    0.141804] imx-sdma 20ec000.sdma: Direct firmware load for '
+            'imx/sdma/sdma-imx6q.bin failed with error -2\n'
+            '[    0.141826] imx-sdma 20ec000.sdma: external firmware not '
+            'found, using ROM firmware\n'
+            '[    2.497619] 1970-01-01 00:00:02 INFO dhcp_client State change '
+            'from INIT to SELECTING.\n')
+        stdout = StringIO()
+
+        with patch('sys.stdout', stdout):
+            formatter.write(text[:100])
+            formatter.write(text[100:105])
+            formatter.write(text[105:])
+            formatter.flush()
+
+        self.assertEqual(
+            stdout.getvalue(),
+            green('[    0.141804]')
+            + red(' imx-sdma 20ec000.sdma: Direct firmware load for '
+                  'imx/sdma/sdma-imx6q.bin failed with error -2', style='bold')
+            + '\n'
+            + green('[    0.141826]')
+            + (' imx-sdma 20ec000.sdma: external firmware not found, using ROM '
+               'firmware\n')
+            + green('[    2.497619]')
+            + yellow(' 1970-01-01 00:00:02 ')
+            + ('INFO dhcp_client State change from INIT to SELECTING.\n'))
