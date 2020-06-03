@@ -287,7 +287,10 @@ def shell(client):
             if line == 'exit':
                 break
 
-            client.execute_command(line)
+            try:
+                client.execute_command(line)
+            except Exception:
+                pass
 
 
 def create_to_path(from_path, to_path):
