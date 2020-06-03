@@ -37,7 +37,7 @@ Get a file from your system.
 
 .. code-block:: text
 
-   $ bunga get_file init
+   $ bunga get_file /root/wire.ko
 
 The put subcommand
 ------------------
@@ -46,7 +46,7 @@ Put a file on your system.
 
 .. code-block:: text
 
-   $ bunga put_file init
+   $ bunga put_file config /root/config
 
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga
