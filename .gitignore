@@ -11,3 +11,5 @@ dist/
 Bunga*
 logs
 /put.txt
+.coverage
+htmlcov

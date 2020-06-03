@@ -10,6 +10,10 @@ import systest
 import os
 
 
+BUNGA_CMD = 'coverage run -a --source=bunga -m bunga'
+BUNGA_CMD_LIST = BUNGA_CMD.split(' ')
+
+
 class ServerThread(threading.Thread):
 
     def __init__(self, listener, handler):
@@ -56,6 +60,9 @@ class TestCase(systest.TestCase):
 
 
 class ShellTest(TestCase):
+    """Use the shell command.
+
+    """
 
     def handler(self, client):
         req = client.recv(10)
@@ -64,11 +71,9 @@ class ShellTest(TestCase):
         client.close()
 
     def run(self):
-        proc = pexpect.spawn(
-            f'coverage run -m bunga shell --uri tcp://localhost:{self.port}',
-            logfile=sys.stdout,
-            encoding='utf-8',
-            codec_errors='replace')
+        proc = pexpect.spawn(f'{BUNGA_CMD} shell --uri tcp://localhost:{self.port}',
+                             encoding='utf-8',
+                             codec_errors='replace')
         proc.expect('\[bunga \d+:\d+:\d+\] Connected')
         proc.sendline('ls')
         proc.expect('foo bar fie')
@@ -79,6 +84,10 @@ class ShellTest(TestCase):
 
 
 class GetFileTest(TestCase):
+    """Use the get_file command.
+
+    """
+    
 
     def handler(self, client):
         req = client.recv(21)
@@ -91,15 +100,21 @@ class GetFileTest(TestCase):
         if os.path.exists('put.txt'):
             os.remove('put.txt')
 
-        subprocess.check_call(['coverage', 'run', '-m', 'bunga', 'get_file',
-                               '--uri', f'tcp://localhost:{self.port}',
-                               'tests/put.txt'])
+        subprocess.check_call(BUNGA_CMD_LIST + [
+            'get_file',
+            '--uri', f'tcp://localhost:{self.port}',
+            'tests/put.txt'
+        ])
 
         with open('put.txt') as fin:
             self.assert_equal(fin.read(), '12345678\n')
 
 
 class PutFileTest(TestCase):
+    """Use the put_file command.
+
+    """
+    
 
     def handler(self, client):
         req = client.recv(15)
@@ -110,13 +125,18 @@ class PutFileTest(TestCase):
         client.close()
 
     def run(self):
-        subprocess.check_call(['coverage', 'run', '-m', 'bunga', 'put_file',
-                               '--uri', f'tcp://localhost:{self.port}',
-                               'tests/put.txt'])
+        subprocess.check_call(BUNGA_CMD_LIST + [
+            'put_file',
+            '--uri', f'tcp://localhost:{self.port}',
+            'tests/put.txt'
+        ])
 
 
 class LogTest(TestCase):
+    """Use the log command.
 
+    """
+    
     def handler(self, client):
         client.sendall(
             b'\x02\x00\x00\x59\x12W\nU[    0.141826] imx-sdma 20ec000.sdma: '
@@ -128,8 +148,7 @@ class LogTest(TestCase):
 
     def run(self):
         proc = pexpect.spawn(
-            f'coverage run -m bunga log --uri tcp://localhost:{self.port}',
-            logfile=sys.stdout,
+            f'{BUNGA_CMD} log --uri tcp://localhost:{self.port}',
             encoding='utf-8',
             codec_errors='replace')
         proc.expect('imx')

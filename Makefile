@@ -1,7 +1,11 @@
 test:
-	python3 setup.py test
+	coverage run --source=bunga setup.py test
 	python3 tests/test_command_line.py $(ARGS)
 	$(MAKE) -C lib
+
+coverage:
+	coverage html
+	echo "Open htmlcov/index.html in firefox."
 
 generate:
 	cd bunga && \
