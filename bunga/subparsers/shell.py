@@ -1,4 +1,6 @@
+import sys
 import os
+import subprocess
 
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
@@ -31,12 +33,23 @@ def is_comment(line):
     return line.strip().startswith('#')
 
 
-def print_output(command, output):
+def fprint_output(command, output, fout):
     if command.startswith('dmesg'):
         for line in output.splitlines():
-            print_log_entry(line)
+            print_log_entry(line, fout)
     else:
-        print(output, end='', flush=True)
+        print(output, end='', flush=True, file=fout)
+
+
+def print_output(command, pipe_commands, output):
+    if pipe_commands:
+        with subprocess.Popen(pipe_commands,
+                              shell=True,
+                              stdin=subprocess.PIPE,
+                              encoding='utf-8') as proc:
+            fprint_output(command, output, proc.stdin)
+    else:
+        fprint_output(command, output, sys.stdout)
 
 
 def shell_main(client):
@@ -62,9 +75,18 @@ def shell_main(client):
             if line == 'exit':
                 break
 
+            pipe_command, _, pipe_commands = line.partition('|')
+            redirect_command, _, redirect_commands = line.partition('>')
+
+            if len(pipe_command) <= len(redirect_command):
+                command = pipe_command
+            else:
+                command = redirect_command
+                pipe_commands = f'cat > {redirect_commands}'
+
             try:
-                output = client.execute_command(line)
-                print_output(line, output)
+                output = client.execute_command(command)
+                print_output(command, pipe_commands, output)
             except ExecuteCommandError as e:
                 print(e.output, end='')
                 print_error(e.error)

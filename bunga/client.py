@@ -150,7 +150,7 @@ def print_error(error):
     print(red(f'ERROR({error})', style='bold'))
 
 
-def print_log_entry(entry):
+def print_log_entry(entry, fout):
     header, text = entry.split(']', 1)
     header += ']'
 
@@ -172,7 +172,7 @@ def print_log_entry(entry):
     elif is_warning(text):
         test = yellow(text, style='bold')
 
-    print(green(header) + text, flush=True)
+    print(green(header) + text, flush=True, file=fout)
 
 
 class ClientThread(threading.Thread):

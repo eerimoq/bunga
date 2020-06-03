@@ -168,13 +168,16 @@ class ClientTest(unittest.TestCase):
         with patch('sys.stdout', stdout):
             bunga.client.print_log_entry(
                 '[    0.141804] imx-sdma 20ec000.sdma: Direct firmware load for '
-                'imx/sdma/sdma-imx6q.bin failed with error -2')
+                'imx/sdma/sdma-imx6q.bin failed with error -2',
+                sys.stdout)
             bunga.client.print_log_entry(
                 '[    0.141826] imx-sdma 20ec000.sdma: external firmware not '
-                'found, using ROM firmware')
+                'found, using ROM firmware',
+                sys.stdout)
             bunga.client.print_log_entry(
                 '[    2.497619] 1970-01-01 00:00:02 INFO dhcp_client State change '
-                'from INIT to SELECTING.')
+                'from INIT to SELECTING.',
+                sys.stdout)
 
         self.assertEqual(
             stdout.getvalue(),
