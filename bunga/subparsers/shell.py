@@ -1,7 +1,6 @@
 import os
 
 from prompt_toolkit import prompt
-from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
@@ -33,7 +32,7 @@ def is_comment(line):
 
 
 def print_output(command, output):
-    if command == 'dmesg':
+    if command.startswith('dmesg'):
         for line in output.splitlines():
             print_log_entry(line)
     else:
@@ -75,8 +74,7 @@ def _do_shell(args):
     client = ClientThread(args.uri, ShellClient)
     client.start()
 
-    with patch_stdout():
-        shell_main(client)
+    shell_main(client)
 
 
 def add_subparser(subparsers):
