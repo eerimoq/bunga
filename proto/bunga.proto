@@ -27,7 +27,8 @@ message ExecuteCommandReq {
 message ExecuteCommandRsp {
     // Command output. Empty in the last message.
     string output = 1;
-    // The error message. Only present in error messages.
+    // An error occurred if this is not the empty string. Only present
+    // in the last message.
     string error = 2;
 }
 
@@ -46,12 +47,13 @@ message GetFileRsp {
     int64 size = 1;
     // File data. Empty in last message.
     bytes data = 2;
-    // The error message. Only present in error messages.
+    // An error occurred if this is not the empty string. Only present
+    // in the last message.
     string error = 3;
 }
 
 message PutFileReq {
-    // The file path relative to the root. Only part of the first
+    // The file path relative to the root. Only present in the first
     // message.
     string path = 1;
     // File data. Empty in first and last message.
