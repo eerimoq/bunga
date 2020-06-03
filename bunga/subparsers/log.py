@@ -1,3 +1,4 @@
+import sys
 import time
 
 from ..client import Client
@@ -17,7 +18,7 @@ class LogClient(Client):
         print_info('Disconnected')
 
     async def on_log_entry_ind(self, message):
-        print_log_entry(''.join(message.text))
+        print_log_entry(''.join(message.text), sys.stdout)
 
 
 def _do_log(args):
