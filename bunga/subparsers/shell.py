@@ -67,6 +67,7 @@ def shell_main(client):
                 output = client.execute_command(line)
                 print_output(line, output)
             except ExecuteCommandError as e:
+                print(e.output, end='')
                 print_error(e.error)
 
 
