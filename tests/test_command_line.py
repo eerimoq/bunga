@@ -65,7 +65,7 @@ class ShellTest(TestCase):
 
     def run(self):
         proc = pexpect.spawn(
-            f'python3 -m bunga shell --uri tcp://localhost:{self.port}',
+            f'coverage run -m bunga shell --uri tcp://localhost:{self.port}',
             logfile=sys.stdout,
             encoding='utf-8',
             codec_errors='replace')
@@ -83,15 +83,15 @@ class GetFileTest(TestCase):
     def handler(self, client):
         req = client.recv(21)
         self.assert_equal(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
-        client.send(b'\x02\x00\x00\x0f\x1a\r\x08\t\x12\t12345678\n')
-        client.send(b'\x02\x00\x00\x02\x1a\x00')
+        client.sendall(b'\x02\x00\x00\x0f\x1a\r\x08\t\x12\t12345678\n')
+        client.sendall(b'\x02\x00\x00\x02\x1a\x00')
         client.close()
 
     def run(self):
         if os.path.exists('put.txt'):
             os.remove('put.txt')
 
-        subprocess.check_call(['python3', '-m', 'bunga', 'get_file',
+        subprocess.check_call(['coverage', 'run', '-m', 'bunga', 'get_file',
                                '--uri', f'tcp://localhost:{self.port}',
                                'tests/put.txt'])
 
@@ -104,13 +104,13 @@ class PutFileTest(TestCase):
     def handler(self, client):
         req = client.recv(15)
         self.assert_equal(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
-        req = client.recv(16)
-        self.assert_equal(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678')
-        client.send(b'\x02\x00\x00\x02"\x00')
+        req = client.recv(17)
+        self.assert_equal(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+        client.sendall(b'\x02\x00\x00\x02"\x00')
         client.close()
 
     def run(self):
-        subprocess.check_call(['python3', '-m', 'bunga', 'put_file',
+        subprocess.check_call(['coverage', 'run', '-m', 'bunga', 'put_file',
                                '--uri', f'tcp://localhost:{self.port}',
                                'tests/put.txt'])
 
@@ -128,7 +128,7 @@ class LogTest(TestCase):
 
     def run(self):
         proc = pexpect.spawn(
-            f'python3 -m bunga log --uri tcp://localhost:{self.port}',
+            f'coverage run -m bunga log --uri tcp://localhost:{self.port}',
             logfile=sys.stdout,
             encoding='utf-8',
             codec_errors='replace')
