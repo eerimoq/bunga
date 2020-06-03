@@ -34,13 +34,11 @@ def main():
     from .subparsers import get_file
     from .subparsers import put_file
     from .subparsers import log
-    from .subparsers import monitor
 
     shell.add_subparser(subparsers)
     get_file.add_subparser(subparsers)
     put_file.add_subparser(subparsers)
     log.add_subparser(subparsers)
-    monitor.add_subparser(subparsers)
 
     args = parser.parse_args()
 
