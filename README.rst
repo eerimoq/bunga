@@ -24,7 +24,7 @@ and execute the ``df`` command.
 .. code-block:: text
 
    $ bunga shell
-   Connected.
+   [bunga 12:32:00] Connected
    $ df
    MOUNTED ON               TOTAL      USED      FREE
    /                        53 MB      2 MB     51 MB
@@ -32,7 +32,6 @@ and execute the ``df`` command.
    /sys                      0 MB      0 MB      0 MB
    /mnt/disk1                7 MB      0 MB      7 MB
    /mnt/disk2                0 MB      0 MB      0 MB
-   OK
    $
 
 The get subcommand
@@ -42,7 +41,8 @@ Get a file from your system.
 
 .. code-block:: text
 
-   $ bunga get init
+   $ bunga get_file init
+   $
 
 The put subcommand
 ------------------
@@ -51,7 +51,28 @@ Put a file on your system.
 
 .. code-block:: text
 
-   $ bunga put init
+   $ bunga put_file init
+   $
+
+The log subcommand
+------------------
+
+Stream system logs to your PC.
+
+.. code-block:: text
+
+   $ bunga log
+   ...
+
+The monitor subcommand
+----------------------
+
+Monitor the system.
+
+.. code-block:: text
+
+   $ bunga monitor
+   ...
 
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga

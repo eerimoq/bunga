@@ -163,7 +163,7 @@ class ClientTest(unittest.TestCase):
             asyncio.gather(server_main(listener), client_main()), 2)
 
     def test_execute_command_log_formatter(self):
-        formatter = bunga.find_formatter('dmesg')
+        formatter = bunga.client.find_formatter('dmesg')
         text = (
             '[    0.141804] imx-sdma 20ec000.sdma: Direct firmware load for '
             'imx/sdma/sdma-imx6q.bin failed with error -2\n'
