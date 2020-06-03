@@ -54,19 +54,21 @@ class CommandLineTest(unittest.TestCase):
         stdout = StringIO()
 
         with patch('sys.stdout', stdout):
-            client = bunga.ClientThread(f'tcp://localhost:{port}')
+            client = bunga.ClientThread(f'tcp://localhost:{port}',
+                                        bunga.subparsers.shell.ShellClient)
             client.start()
 
-            with self.assertRaises(bunga.ExecuteCommandError):
+            with self.assertRaises(bunga.ExecuteCommandError) as cm:
                 client.execute_command('ko')
 
-            client.execute_command('ls')
+            self.assertEqual(str(cm.exception.error), 'Not found')
+
+            output = client.execute_command('ls')
+            self.assertIn('foo bar fie', output)
             client.stop()
 
         server.join()
         self.assertIsNone(server.exception)
-        self.assertIn('ERROR(Not found)', stdout.getvalue())
-        self.assertIn('foo bar fie', stdout.getvalue())
 
     def get_file_handler(self, client):
         req = client.recv(21)

@@ -29,76 +29,12 @@ class ExecuteCommandError(Exception):
         self.error = error
 
 
-class StandardFormatter:
-
-    def write(self, text):
-        print(text, end='', flush=True)
-
-    def flush(self):
-        pass
-
-
-class LogFormatter:
-
-    def __init__(self):
-        self._data = ''
-
-    def write(self, text):
-        lines = (self._data + text).split('\n')
-
-        for line in lines[:-1]:
-            print_log_entry(line)
-
-        self._data = lines[-1]
-
-    def flush(self):
-        # This should never happen.
-        if self._data:
-            print(self._data, flush=True)
-
-
-def find_formatter(command):
-    if command == 'dmesg':
-        return LogFormatter()
-    else:
-        return StandardFormatter()
-
-
-def print_info(text):
-    print(cyan(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
-
-
 def is_error(text):
     return RE_ERROR.search(text)
 
 
 def is_warning(text):
     return RE_WARNING.search(text)
-
-
-def print_log_entry(entry):
-    header, text = entry.split(']', 1)
-    header += ']'
-
-    mo = RE_ML_LOG.match(text)
-
-    if mo:
-        date = mo.group(1)
-        level = mo.group(2)
-        text = level + mo.group(3) + mo.group(4)
-
-        if level in ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR']:
-            text = red(text, style='bold')
-        elif level == 'WARNING':
-            text = yellow(text, style='bold')
-
-        text = yellow(date) + text
-    elif is_error(text):
-        text = red(text, style='bold')
-    elif is_warning(text):
-        test = yellow(text, style='bold')
-
-    print(green(header) + text, flush=True)
 
 
 class Client(BungaClient):
@@ -109,19 +45,15 @@ class Client(BungaClient):
         self._connected_event = asyncio.Event(loop=loop)
         self._complete_event = asyncio.Event(loop=loop)
         self._fout = None
-        self._command_formatter = None
         self._command_output = []
         self._awaiting_completion = False
         self._error = ''
-        self.print_log_entries = False
 
     async def on_connected(self):
-        print_info('Connected')
         self._is_connected = True
         self._connected_event.set()
 
     async def on_disconnected(self):
-        print_info('Disconnected')
         self._connected_event.clear()
         self._is_connected = False
 
@@ -129,37 +61,28 @@ class Client(BungaClient):
             self._error = 'Connection lost'
             self._complete_event.set()
 
-    def signal(self, error):
+    def signal_completed(self, error):
         self._awaiting_completion = False
         self._error = error
         self._complete_event.set()
 
-    def print_result_and_signal(self, error):
-        if error:
-            print(red(f'ERROR({error})', style='bold'))
-
-        self.signal(error)
-
     async def on_execute_command_rsp(self, message):
         if message.output:
-            self._command_formatter.write(message.output)
             self._command_output.append(message.output)
         else:
-            self._command_formatter.flush()
-            self.print_result_and_signal(message.error)
+            self.signal_completed(message.error)
 
     async def on_log_entry_ind(self, message):
-        if self.print_log_entries:
-            print_log_entry(''.join(message.text))
+        pass
 
     async def on_get_file_rsp(self, message):
         if message.data:
             self._fout.write(message.data)
         else:
-            self.signal(message.error)
+            self.signal_completed(message.error)
 
     async def on_put_file_rsp(self, message):
-        self.signal(message.error)
+        self.signal_completed(message.error)
 
     async def wait_for_connection(self):
         if not self._is_connected:
@@ -168,7 +91,6 @@ class Client(BungaClient):
     async def execute_command(self, command):
         await self.wait_for_connection()
         self._awaiting_completion = True
-        self._command_formatter = find_formatter(command)
         self._command_output = []
         message = self.init_execute_command_req()
         message.command = command
@@ -220,14 +142,46 @@ class Client(BungaClient):
             raise Exception(self._error)
 
 
+def print_info(text):
+    print(cyan(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
+
+
+def print_error(error):
+    print(red(f'ERROR({error})', style='bold'))
+
+
+def print_log_entry(entry):
+    header, text = entry.split(']', 1)
+    header += ']'
+
+    mo = RE_ML_LOG.match(text)
+
+    if mo:
+        date = mo.group(1)
+        level = mo.group(2)
+        text = level + mo.group(3) + mo.group(4)
+
+        if level in ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR']:
+            text = red(text, style='bold')
+        elif level == 'WARNING':
+            text = yellow(text, style='bold')
+
+        text = yellow(date) + text
+    elif is_error(text):
+        text = red(text, style='bold')
+    elif is_warning(text):
+        test = yellow(text, style='bold')
+
+    print(green(header) + text, flush=True)
+
+
 class ClientThread(threading.Thread):
 
-    def __init__(self, uri, print_log_entries=False):
+    def __init__(self, uri, client_class=Client):
         super().__init__()
         LOGGER.info('Server URI: %s', uri)
         self._loop = asyncio.new_event_loop()
-        self._client = Client(uri, self._loop)
-        self._client.print_log_entries = print_log_entries
+        self._client = client_class(uri, self._loop)
         self.daemon = True
 
     def run(self):

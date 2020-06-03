@@ -4,7 +4,23 @@ from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
+from ..client import Client
 from ..client import ClientThread
+from ..client import print_info
+from ..client import print_error
+from ..client import print_log_entry
+from ..client import ExecuteCommandError
+
+
+class ShellClient(Client):
+
+    async def on_connected(self):
+        await super().on_connected()
+        print_info('Connected')
+
+    async def on_disconnected(self):
+        await super().on_disconnected()
+        print_info('Disconnected')
 
 
 def is_comment(line):
@@ -13,6 +29,14 @@ def is_comment(line):
     """
 
     return line.strip().startswith('#')
+
+
+def print_output(command, output):
+    if command == 'dmesg':
+        for line in output.splitlines():
+            print_log_entry(line)
+    else:
+        print(output, end='', flush=True)
 
 
 def shell(client):
@@ -39,13 +63,14 @@ def shell(client):
                 break
 
             try:
-                client.execute_command(line)
-            except Exception:
-                pass
+                output = client.execute_command(line)
+                print_output(line, output)
+            except ExecuteCommandError as e:
+                print_error(e.error)
 
 
 def _do_shell(args):
-    client = ClientThread(args.uri)
+    client = ClientThread(args.uri, ShellClient)
     client.start()
     shell(client)
 

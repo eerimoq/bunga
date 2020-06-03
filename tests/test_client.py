@@ -162,22 +162,19 @@ class ClientTest(unittest.TestCase):
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
 
-    def test_execute_command_log_formatter(self):
-        formatter = bunga.client.find_formatter('dmesg')
-        text = (
-            '[    0.141804] imx-sdma 20ec000.sdma: Direct firmware load for '
-            'imx/sdma/sdma-imx6q.bin failed with error -2\n'
-            '[    0.141826] imx-sdma 20ec000.sdma: external firmware not '
-            'found, using ROM firmware\n'
-            '[    2.497619] 1970-01-01 00:00:02 INFO dhcp_client State change '
-            'from INIT to SELECTING.\n')
+    def test_print_log_entry(self):
         stdout = StringIO()
 
         with patch('sys.stdout', stdout):
-            formatter.write(text[:100])
-            formatter.write(text[100:105])
-            formatter.write(text[105:])
-            formatter.flush()
+            bunga.client.print_log_entry(
+                '[    0.141804] imx-sdma 20ec000.sdma: Direct firmware load for '
+                'imx/sdma/sdma-imx6q.bin failed with error -2')
+            bunga.client.print_log_entry(
+                '[    0.141826] imx-sdma 20ec000.sdma: external firmware not '
+                'found, using ROM firmware')
+            bunga.client.print_log_entry(
+                '[    2.497619] 1970-01-01 00:00:02 INFO dhcp_client State change '
+                'from INIT to SELECTING.')
 
         self.assertEqual(
             stdout.getvalue(),
