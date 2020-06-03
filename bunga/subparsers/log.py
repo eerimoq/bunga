@@ -2,10 +2,19 @@ import time
 
 from ..client import Client
 from ..client import ClientThread
+from ..client import print_info
 from ..client import print_log_entry
 
 
 class LogClient(Client):
+
+    async def on_connected(self):
+        await super().on_connected()
+        print_info('Connected')
+
+    async def on_disconnected(self):
+        await super().on_disconnected()
+        print_info('Disconnected')
 
     async def on_log_entry_ind(self, message):
         print_log_entry(''.join(message.text))
