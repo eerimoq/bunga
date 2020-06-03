@@ -1,5 +1,6 @@
 test:
 	python3 setup.py test
+	python3 tests/test_command_line.py
 	$(MAKE) -C lib
 
 generate:

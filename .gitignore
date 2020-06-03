@@ -8,3 +8,6 @@ dist/
 *.o
 *.a
 /get.txt
+Bunga*
+logs
+/put.txt

@@ -62,13 +62,14 @@ class ClientTest(unittest.TestCase):
             client = Client(listener)
             client.start()
 
-            output, error = await client.execute_command('date')
+            output = await client.execute_command('date')
             self.assertEqual(output, '2020')
-            self.assertEqual(error, '')
 
-            output, error = await client.execute_command('bad')
-            self.assertEqual(output, '')
-            self.assertEqual(error, 'not found')
+            with self.assertRaises(bunga.ExecuteCommandError) as cm:
+                await client.execute_command('bad')
+
+            self.assertEqual(cm.exception.output, '')
+            self.assertEqual(cm.exception.error, 'not found')
 
             client.stop()
             listener.close()
@@ -100,10 +101,10 @@ class ClientTest(unittest.TestCase):
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
 
-    def test_get(self):
-        asyncio.run(self.get())
+    def test_get_file(self):
+        asyncio.run(self.get_file())
 
-    async def get(self):
+    async def get_file(self):
         async def on_client_connected(reader, writer):
             req = await reader.readexactly(13)
             self.assertEqual(req, b'\x01\x00\x00\x09\x12\x07\n\x05/init')
@@ -119,8 +120,7 @@ class ClientTest(unittest.TestCase):
             client = Client(listener)
             client.start()
 
-            error = await client.get('/init', 'get.txt')
-            self.assertEqual(error, '')
+            await client.get_file('/init', 'get.txt')
 
             with open('get.txt', 'rb') as fin:
                 self.assertEqual(fin.read(), b'12345678')
@@ -131,10 +131,10 @@ class ClientTest(unittest.TestCase):
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
 
-    def test_put(self):
-        asyncio.run(self.put())
+    def test_put_file(self):
+        asyncio.run(self.put_file())
 
-    async def put(self):
+    async def put_file(self):
         async def on_client_connected(reader, writer):
             req = await reader.readexactly(22)
             self.assertEqual(
@@ -154,8 +154,7 @@ class ClientTest(unittest.TestCase):
             client = Client(listener)
             client.start()
 
-            error = await client.put('tests/put.txt', 'put_remote.txt')
-            self.assertEqual(error, '')
+            await client.put_file('tests/put.txt', 'put_remote.txt')
 
             client.stop()
             listener.close()
