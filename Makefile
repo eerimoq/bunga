@@ -1,6 +1,5 @@
 test:
 	coverage run --source=bunga setup.py test
-	python3 tests/test_command_line.py $(ARGS)
 	$(MAKE) -C lib
 
 coverage:

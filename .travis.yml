@@ -10,7 +10,6 @@ install:
 script:
   - source setup.sh
   - coverage run --source=bunga setup.py test
-  - PYTHONPATH=$(pwd) python tests/test_command_line.py
   - make -s -C lib
 
 after_success:

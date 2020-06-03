@@ -1,17 +1,11 @@
-import time
 import threading
 import sys
-import logging
 import socket
-import pexpect
 import bunga
-import subprocess
-import systest
 import os
-
-
-BUNGA_CMD = 'coverage run -a --source=bunga -m bunga'
-BUNGA_CMD_LIST = BUNGA_CMD.split(' ')
+import unittest
+from unittest.mock import patch
+from io import StringIO
 
 
 class ServerThread(threading.Thread):
@@ -28,6 +22,9 @@ class ServerThread(threading.Thread):
             self._handler(self._listener.accept()[0])
         except Exception as e:
             self.exception = e
+            raise
+
+        self._listener.close()
 
 
 def start_server(handler):
@@ -40,136 +37,134 @@ def start_server(handler):
     return server, listener.getsockname()[1]
 
 
-class TestCase(systest.TestCase):
+class CommandLineTest(unittest.TestCase):
 
-    def __init__(self):
-        super().__init__()
-        self.server = None
-        self.port = None
-
-    def handler(self, client):
-        raise NotImplementedError()
-
-    def setup(self):
-        self.server, self.port = start_server(self.handler)
-
-    def teardown(self):
-        self.server.join()
-        self.assert_is_none(self.server.exception)
-
-
-
-class ShellTest(TestCase):
-    """Use the shell command.
-
-    """
-
-    def handler(self, client):
+    def shell_handler(self, client):
         req = client.recv(10)
-        self.assert_equal(req, b'\x01\x00\x00\x06\n\x04\n\x02ls')
+        self.assertEqual(req, b'\x01\x00\x00\x06\n\x04\n\x02ko')
+        client.sendall(b'\x02\x00\x00\x0d\n\x0b\x12\tNot found')
+        req = client.recv(10)
+        self.assertEqual(req, b'\x01\x00\x00\x06\n\x04\n\x02ls')
         client.sendall(b'\x02\x00\x00\x0f\n\r\n\x0bfoo bar fie')
+        client.sendall(b'\x02\x00\x00\x02\n\x00')
         client.close()
 
-    def run(self):
-        proc = pexpect.spawn(f'{BUNGA_CMD} shell --uri tcp://localhost:{self.port}',
-                             encoding='utf-8',
-                             codec_errors='replace')
-        proc.expect('\[bunga \d+:\d+:\d+\] Connected')
-        proc.sendline('ls')
-        proc.expect('foo bar fie')
-        proc.sendline('exit')
+    def test_shell(self):
+        server, port = start_server(self.shell_handler)
+        stdout = StringIO()
 
-        while proc.isalive():
-            time.sleep(0.1)
+        with patch('sys.stdout', stdout):
+            client = bunga.ClientThread(f'tcp://localhost:{port}')
+            client.start()
 
+            with self.assertRaises(bunga.ExecuteCommandError):
+                client.execute_command('ko')
 
-class GetFileTest(TestCase):
-    """Use the get_file command.
+            client.execute_command('ls')
+            client.stop()
 
-    """
-    
+        server.join()
+        self.assertIsNone(server.exception)
+        self.assertIn('ERROR(Not found)', stdout.getvalue())
+        self.assertIn('foo bar fie', stdout.getvalue())
 
-    def handler(self, client):
+    def get_file_handler(self, client):
         req = client.recv(21)
-        self.assert_equal(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
+        self.assertEqual(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
         client.sendall(b'\x02\x00\x00\x0f\x1a\r\x08\t\x12\t12345678\n')
         client.sendall(b'\x02\x00\x00\x02\x1a\x00')
         client.close()
 
-    def run(self):
+    def test_get_file(self):
+        server, port = start_server(self.get_file_handler)
+        argv = [
+            'bunga', 'get_file',
+            '--uri', f'tcp://localhost:{port}',
+            'tests/put.txt'
+        ]
+
         if os.path.exists('put.txt'):
             os.remove('put.txt')
 
-        subprocess.check_call(BUNGA_CMD_LIST + [
-            'get_file',
-            '--uri', f'tcp://localhost:{self.port}',
-            'tests/put.txt'
-        ])
+        with patch('sys.argv', argv):
+            bunga.main()
 
         with open('put.txt') as fin:
-            self.assert_equal(fin.read(), '12345678\n')
+            self.assertEqual(fin.read(), '12345678\n')
 
+        server.join()
+        self.assertIsNone(server.exception)
 
-class PutFileTest(TestCase):
-    """Use the put_file command.
+    def get_file_error_handler(self, client):
+        req = client.recv(21)
+        self.assertEqual(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
+        client.sendall(b'\x02\x00\x00\x0d\x1a\x0b\x1a\tNot found')
+        client.close()
 
-    """
-    
+    def test_get_file_error(self):
+        server, port = start_server(self.get_file_error_handler)
+        argv = [
+            'bunga', '-d', 'get_file',
+            '--uri', f'tcp://localhost:{port}',
+            'tests/put.txt'
+        ]
 
-    def handler(self, client):
+        with patch('sys.argv', argv):
+            with self.assertRaises(Exception) as cm:
+                bunga.main()
+
+            self.assertEqual(str(cm.exception), 'Not found')
+
+        server.join()
+        self.assertIsNone(server.exception)
+
+    def put_file_handler(self, client):
         req = client.recv(15)
-        self.assert_equal(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
+        self.assertEqual(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
         req = client.recv(17)
-        self.assert_equal(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+        self.assertEqual(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+        req = client.recv(6)
+        self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
         client.sendall(b'\x02\x00\x00\x02"\x00')
         client.close()
 
-    def run(self):
-        subprocess.check_call(BUNGA_CMD_LIST + [
-            'put_file',
-            '--uri', f'tcp://localhost:{self.port}',
+    def test_put_file(self):
+        server, port = start_server(self.put_file_handler)
+        argv = [
+            'bunga', 'put_file',
+            '--uri', f'tcp://localhost:{port}',
             'tests/put.txt'
-        ])
+        ]
 
+        with patch('sys.argv', argv):
+            bunga.main()
 
-class LogTest(TestCase):
-    """Use the log command.
+        server.join()
+        self.assertIsNone(server.exception)
 
-    """
-    
-    def handler(self, client):
-        client.sendall(
-            b'\x02\x00\x00\x59\x12W\nU[    0.141826] imx-sdma 20ec000.sdma: '
-            b'external firmware not found, using ROM firmware')
-        client.sendall(
-            b'\x02\x00\x00\x5c\x12Z\nX[    2.497619] 1970-01-01 00:00:02 INFO '
-            b'dhcp_client State change from INIT to SELECTING.')
+    def put_file_error_handler(self, client):
+        req = client.recv(15)
+        self.assertEqual(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
+        req = client.recv(17)
+        self.assertEqual(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+        req = client.recv(6)
+        self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
+        client.sendall(b'\x02\x00\x00\x0d"\x0b\n\tNot found')
         client.close()
 
-    def run(self):
-        proc = pexpect.spawn(
-            f'{BUNGA_CMD} log --uri tcp://localhost:{self.port}',
-            encoding='utf-8',
-            codec_errors='replace')
-        proc.expect('imx')
-        proc.close()
+    def test_put_file_error(self):
+        server, port = start_server(self.put_file_error_handler)
+        argv = [
+            'bunga', '-d', 'put_file',
+            '--uri', f'tcp://localhost:{port}',
+            'tests/put.txt'
+        ]
 
-        while proc.isalive():
-            time.sleep(0.1)
+        with patch('sys.argv', argv):
+            with self.assertRaises(Exception) as cm:
+                bunga.main()
 
+            self.assertEqual(str(cm.exception), 'Not found')
 
-def main():
-    sequencer = systest.setup("Bunga", console_log_level=logging.DEBUG)
-
-    sequencer.run(
-        ShellTest(),
-        GetFileTest(),
-        PutFileTest(),
-        LogTest()
-    )
-
-    sequencer.report_and_exit()
-
-
-if __name__ == '__main__':
-    main()
+        server.join()
+        self.assertIsNone(server.exception)

@@ -2,5 +2,3 @@ messi
 grpcio-tools
 prompt_toolkit
 ansicolors
-systest
-pexpect

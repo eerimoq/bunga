@@ -134,13 +134,16 @@ class Client(BungaClient):
             self._error = 'Connection lost'
             self._complete_event.set()
 
+    def signal(self, error):
+        self._awaiting_completion = False
+        self._error = error
+        self._complete_event.set()
+
     def print_result_and_signal(self, error):
         if error:
             print(red(f'ERROR({error})', style='bold'))
 
-        self._awaiting_completion = False
-        self._error = error
-        self._complete_event.set()
+        self.signal(error)
 
     async def on_execute_command_rsp(self, message):
         if message.output:
@@ -158,10 +161,10 @@ class Client(BungaClient):
         if message.data:
             self._fout.write(message.data)
         else:
-            self.print_result_and_signal(message.error)
+            self.signal(message.error)
 
     async def on_put_file_rsp(self, message):
-        self.print_result_and_signal(message.error)
+        self.signal(message.error)
 
     async def wait_for_connection(self):
         if not self._is_connected:
@@ -236,6 +239,9 @@ class ClientThread(threading.Thread):
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._start())
         self._loop.run_forever()
+
+    def stop(self):
+        pass
 
     def execute_command(self, command):
         return asyncio.run_coroutine_threadsafe(
