@@ -1,6 +1,7 @@
 import os
 
 from prompt_toolkit import prompt
+from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
@@ -39,7 +40,7 @@ def print_output(command, output):
         print(output, end='', flush=True)
 
 
-def shell(client):
+def shell_main(client):
     commands = [command[1:] for command in []]
     commands.append('exit')
     user_home = os.path.expanduser('~')
@@ -72,7 +73,9 @@ def shell(client):
 def _do_shell(args):
     client = ClientThread(args.uri, ShellClient)
     client.start()
-    shell(client)
+
+    with patch_stdout():
+        shell_main(client)
 
 
 def add_subparser(subparsers):
