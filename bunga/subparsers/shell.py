@@ -52,6 +52,41 @@ def print_output(command, pipe_commands, output):
         fprint_output(command, output, sys.stdout)
 
 
+def parse_command(line):
+    """Split given line in command to execute on the remote system and
+    commands to pipe/redirect the output to on the host.
+
+    Pipe:
+
+    "ls | grep foo" -> ('ls', 'grep foo')
+
+    Redirect:
+
+    "cat /root/conf > conf" -> ('cat /root/conf', 'cat > conf')
+
+    Pipe found first, redirect part of host command:
+
+    "ls | grep foo > log" -> ('ls', 'grep foo > log')
+
+    """
+
+    pipe_command, _, pipe_commands = line.partition('|')
+    redirect_command, _, redirect_commands = line.partition('>')
+
+    pipe_command = pipe_command.strip()
+    pipe_commands = pipe_commands.strip()
+    redirect_command = redirect_command.strip()
+    redirect_commands = redirect_commands.strip()
+
+    if len(pipe_command) <= len(redirect_command):
+        command = pipe_command
+    else:
+        command = redirect_command
+        pipe_commands = f'cat > {redirect_commands}'
+
+    return (command, pipe_commands)
+
+
 def shell_main(client):
     commands = [command[1:] for command in []]
     commands.append('exit')
@@ -75,14 +110,7 @@ def shell_main(client):
             if line == 'exit':
                 break
 
-            pipe_command, _, pipe_commands = line.partition('|')
-            redirect_command, _, redirect_commands = line.partition('>')
-
-            if len(pipe_command) <= len(redirect_command):
-                command = pipe_command
-            else:
-                command = redirect_command
-                pipe_commands = f'cat > {redirect_commands}'
+            command, pipe_commands = parse_command(line)
 
             try:
                 output = client.execute_command(command)
