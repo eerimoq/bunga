@@ -12,7 +12,7 @@ from ..client import print_info
 from ..client import print_error
 from ..client import print_log_entry
 from ..client import ExecuteCommandError
-
+from .. import linux
 
 class ShellClient(Client):
 
@@ -112,9 +112,23 @@ def shell_main(client):
 
             command, pipe_commands = parse_command(line)
 
+            if command == 'netstat':
+                commands = ['cat /proc/net/tcp']
+                formatter = linux.format_netstat
+            elif command == 'uptime':
+                commands = ['cat /proc/uptime', 'cat /proc/loadavg']
+                formatter = linux.format_uptime
+            else:
+                commands = [command]
+                formatter = lambda output: output
+
             try:
-                output = client.execute_command(command)
-                print_output(command, pipe_commands, output)
+                output = []
+
+                for command in commands:
+                    output.append(client.execute_command(command))
+
+                print_output(command, pipe_commands, formatter(*output))
             except ExecuteCommandError as e:
                 print(e.output, end='')
                 print_error(e.error)
