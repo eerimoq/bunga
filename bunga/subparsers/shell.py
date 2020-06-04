@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import subprocess
@@ -10,9 +11,13 @@ from ..client import Client
 from ..client import ClientThread
 from ..client import print_info
 from ..client import print_error
-from ..client import print_log_entry
+from ..client import format_log_entry
 from ..client import ExecuteCommandError
 from .. import linux
+
+
+RE_PID = re.compile(r'^d (\d+)/$')
+
 
 class ShellClient(Client):
 
@@ -33,23 +38,15 @@ def is_comment(line):
     return line.strip().startswith('#')
 
 
-def fprint_output(command, output, fout):
-    if command.startswith('dmesg'):
-        for line in output.splitlines():
-            print_log_entry(line, fout)
-    else:
-        print(output, end='', flush=True, file=fout)
-
-
-def print_output(command, pipe_commands, output):
+def print_output(output, pipe_commands):
     if pipe_commands:
         with subprocess.Popen(pipe_commands,
                               shell=True,
                               stdin=subprocess.PIPE,
                               encoding='utf-8') as proc:
-            fprint_output(command, output, proc.stdin)
+            print(output, end='', flush=True, file=proc.stdin)
     else:
-        fprint_output(command, output, sys.stdout)
+        print(output, end='', flush=True)
 
 
 def parse_command(line):
@@ -87,6 +84,45 @@ def parse_command(line):
     return (command, pipe_commands)
 
 
+def execute_netstat(client):
+    return linux.format_netstat(client.execute_command('cat /proc/net/tcp'))
+
+
+def execute_uptime(client):
+    proc_uptime = client.execute_command('cat /proc/uptime')
+    proc_loadavg = client.execute_command('cat /proc/loadavg')
+
+    return linux.format_uptime(proc_uptime, proc_loadavg)
+
+
+def execute_ps(client):
+    proc_1_task = client.execute_command('ls proc/1/task')
+    pids = []
+
+    for line in proc_1_task.splitlines():
+        mo = RE_PID.match(line)
+
+        if mo:
+            pids.append(mo.group(1))
+
+    proc_n_status = []
+
+    for pid in pids:
+        proc_n_status.append(
+            client.execute_command(f'cat /proc/1/task/{pid}/status'))
+
+    return linux.format_ps(proc_n_status)
+
+
+def execute_dmesg(client):
+    lines = []
+
+    for line in client.execute_command('dmesg').splitlines():
+        lines.append(format_log_entry(line))
+
+    return '\n'.join(lines) + '\n'
+
+
 def shell_main(client):
     commands = [command[1:] for command in []]
     commands.append('exit')
@@ -112,23 +148,19 @@ def shell_main(client):
 
             command, pipe_commands = parse_command(line)
 
-            if command == 'netstat':
-                commands = ['cat /proc/net/tcp']
-                formatter = linux.format_netstat
-            elif command == 'uptime':
-                commands = ['cat /proc/uptime', 'cat /proc/loadavg']
-                formatter = linux.format_uptime
-            else:
-                commands = [command]
-                formatter = lambda output: output
-
             try:
-                output = []
+                if command == 'netstat':
+                    output = execute_netstat(client)
+                elif command == 'uptime':
+                    output = execute_uptime(client)
+                elif command == 'ps':
+                    output = execute_ps(client)
+                elif command == 'dmesg':
+                    output = execute_dmesg(client)
+                else:
+                    output = client.execute_command(command)
 
-                for command in commands:
-                    output.append(client.execute_command(command))
-
-                print_output(command, pipe_commands, formatter(*output))
+                print_output(output, pipe_commands)
             except ExecuteCommandError as e:
                 print(e.output, end='')
                 print_error(e.error)

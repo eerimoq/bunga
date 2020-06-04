@@ -57,3 +57,29 @@ def format_uptime(proc_uptime, proc_loadavg):
     uptime = int(float(proc_uptime.split()[0]))
 
     return f'up {format_timespan(uptime)},  load average: {one}, {five}, {fifteen}\n'
+
+
+def format_ps(proc_n_status):
+    lines = [
+        'NAME               STATE     SCHEDULED',
+        '--------------------------------------'
+    ]
+
+    for status in proc_n_status:
+        name = '-'
+        state = '-'
+        scheduled = 0
+
+        for line in status.splitlines():
+            if line.startswith('Name:'):
+                name = line.split()[-1]
+            elif line.startswith('State:'):
+                state = line.partition('(')[2].partition(')')[0]
+            elif line.startswith('voluntary_ctxt_switches:'):
+                scheduled += int(line.split()[-1])
+            elif line.startswith('nonvoluntary_ctxt_switches:'):
+                scheduled += int(line.split()[-1])
+
+        lines.append(f'{name:18} {state:9} {scheduled}')
+
+    return '\n'.join(lines) + '\n'
