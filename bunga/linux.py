@@ -52,21 +52,6 @@ def format_netstat(proc_net_tcp):
     return '\n'.join(lines) + '\n'
 
 
-def format_netstat(proc_net_tcp):
-    lines = [
-        'PROTO  LOCAL-ADDRESS          REMOTE-ADDRESS         STATE',
-        '----------------------------------------------------------------'
-    ]
-
-    for entry in RE_IPV4.finditer(proc_net_tcp):
-        local = f'{format_ipv4(entry.group(1))}:{format_port(entry.group(2))}'
-        remote = f'{format_ipv4(entry.group(3))}:{format_port(entry.group(4))}'
-        state = TCP_STATES[int(entry.group(5), 16)]
-        lines.append(f'tcp    {local:21}  {remote:21}  {state}')
-
-    return '\n'.join(lines) + '\n'
-
-
 def format_uptime(proc_uptime, proc_loadavg):
     one, five, fifteen, _, _ = proc_loadavg.split()
     uptime = int(float(proc_uptime.split()[0]))
