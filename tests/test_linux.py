@@ -25,7 +25,7 @@ class LinuxTest(unittest.TestCase):
             'tcp    192.168.0.4:50444      192.168.0.3:28000      established\n'
             'tcp    192.168.0.4:50442      192.168.0.3:28000      time-wait\n')
 
-    def test_netstat(self):
+    def test_uptime(self):
         formatted = linux.format_uptime('19747.42 19696.08\n',
                                         '0.49 0.45 0.46 3/35 102\n')
 
