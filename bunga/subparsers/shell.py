@@ -16,9 +16,6 @@ from ..client import ExecuteCommandError
 from .. import linux
 
 
-RE_PID = re.compile(r'^d (\d+)/$')
-
-
 class ShellClient(Client):
 
     async def on_connected(self):
@@ -55,7 +52,7 @@ def parse_command(line):
 
     Pipe:
 
-    "ls | grep foo" -> ('ls', 'grep foo')
+    "ll | grep foo" -> ('ll', 'grep foo')
 
     Redirect:
 
@@ -63,7 +60,7 @@ def parse_command(line):
 
     Pipe found first, redirect part of host command:
 
-    "ls | grep foo > log" -> ('ls', 'grep foo > log')
+    "ll | grep foo > log" -> ('ll', 'grep foo > log')
 
     """
 
@@ -106,18 +103,10 @@ def execute_ps(client, ps_formatter):
 
     """
 
-    proc_1_task = execute_command(client, 'ls proc/1/task')
-    pids = []
-
-    for line in proc_1_task.splitlines():
-        mo = RE_PID.match(line)
-
-        if mo:
-            pids.append(mo.group(1))
-
     proc_n_stat = []
+    proc_1_task = execute_command(client, 'ls proc/1/task')
 
-    for pid in pids:
+    for pid in proc_1_task.split():
         proc_n_stat.append(
             execute_command(client, f'cat /proc/1/task/{pid}/stat'))
 
