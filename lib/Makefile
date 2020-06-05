@@ -10,7 +10,11 @@ CFLAGS += $(CFLAGS_EXTRA)
 
 .PHONY: library install clean
 
-library: $(LIBRARY)
+library:
+	$(CC) $(CFLAGS) src/bunga.c -o bunga.o
+	$(CC) $(CFLAGS) src/bunga_server.c -o bunga_server.o
+	$(CC) $(CFLAGS) src/bunga_server_linux.c -o bunga_server_linux.o
+	$(AR) cr $(LIBRARY) bunga.o bunga_server.o bunga_server_linux.o
 
 install:
 	find include -type f -exec install -Dm 644 "{}" "$(PREFIX)/{}" \;
@@ -19,9 +23,3 @@ install:
 
 clean:
 	rm $(LIBRARY)
-
-$(LIBRARY):
-	$(CC) $(CFLAGS) src/bunga.c -o bunga.o
-	$(CC) $(CFLAGS) src/bunga_server.c -o bunga_server.o
-	$(CC) $(CFLAGS) src/bunga_server_linux.c -o bunga_server_linux.o
-	$(AR) cr $(LIBRARY) bunga.o bunga_server.o bunga_server_linux.o
