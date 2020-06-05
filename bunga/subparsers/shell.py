@@ -95,7 +95,7 @@ def execute_uptime(client):
     return linux.format_uptime(proc_uptime, proc_loadavg)
 
 
-def execute_ps(client):
+def execute_ps(client, ps_formatter):
     proc_1_task = client.execute_command('ls proc/1/task')
     pids = []
 
@@ -105,13 +105,13 @@ def execute_ps(client):
         if mo:
             pids.append(mo.group(1))
 
-    proc_n_status = []
+    proc_n_stat = []
 
     for pid in pids:
-        proc_n_status.append(
-            client.execute_command(f'cat /proc/1/task/{pid}/status'))
+        proc_n_stat.append(
+            client.execute_command(f'cat /proc/1/task/{pid}/stat'))
 
-    return linux.format_ps(proc_n_status)
+    return ps_formatter.format(proc_n_stat)
 
 
 def execute_dmesg(client):
@@ -128,6 +128,7 @@ def shell_main(client):
     commands.append('exit')
     user_home = os.path.expanduser('~')
     history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
+    ps_formatter = linux.PsFormatter()
 
     while True:
         try:
@@ -154,7 +155,7 @@ def shell_main(client):
                 elif command == 'uptime':
                     output = execute_uptime(client)
                 elif command == 'ps':
-                    output = execute_ps(client)
+                    output = execute_ps(client, ps_formatter)
                 elif command == 'dmesg':
                     output = execute_dmesg(client)
                 else:
