@@ -73,12 +73,17 @@ def proc_state(state):
         return state
 
 
+def format_thread(name, pid, state, ticks, delta):
+    return f'{name:18} {str(pid):4} {state:9} {str(ticks):10} {str(delta)}'
+
+
 class PsFormatter:
 
     def __init__(self):
+        self._prev_idle_ticks = 0
         self._prev_ticks = {}
 
-    def format(self, proc_n_stat):
+    def format(self, proc_stat, proc_n_stat):
         lines = [
             'NAME               PID  STATE     CPU-TICKS  CPU-DELTA',
             '------------------------------------------------------'
@@ -99,7 +104,12 @@ class PsFormatter:
                 delta = '-'
 
             self._prev_ticks[pid] = ticks
+            lines.append(format_thread(name, pid, state, ticks, delta))
 
-            lines.append(f'{name:18} {pid:4} {state:9} {str(ticks):10} {str(delta)}')
+        # Faked idle thread.
+        ticks = int(proc_stat.split()[4])
+        delta = (ticks - self._prev_idle_ticks)
+        self._prev_idle_ticks = ticks
+        lines.append(format_thread('idle', '-', '-', ticks, delta))
 
         return '\n'.join(lines) + '\n'

@@ -111,7 +111,9 @@ def execute_ps(client, ps_formatter):
         proc_n_stat.append(
             client.execute_command(f'cat /proc/1/task/{pid}/stat'))
 
-    return ps_formatter.format(proc_n_stat)
+    proc_stat = client.execute_command('cat /proc/stat')
+
+    return ps_formatter.format(proc_stat, proc_n_stat)
 
 
 def execute_dmesg(client):
