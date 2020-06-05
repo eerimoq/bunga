@@ -84,13 +84,17 @@ def parse_command(line):
     return (command, pipe_commands)
 
 
+def execute_command(client, command):
+    return client.execute_command(command).decode('utf-8', 'replace')
+
+
 def execute_netstat(client):
-    return linux.format_netstat(client.execute_command('cat /proc/net/tcp'))
+    return linux.format_netstat(execute_command(client, 'cat /proc/net/tcp'))
 
 
 def execute_uptime(client):
-    proc_uptime = client.execute_command('cat /proc/uptime')
-    proc_loadavg = client.execute_command('cat /proc/loadavg')
+    proc_uptime = execute_command(client, 'cat /proc/uptime')
+    proc_loadavg = execute_command(client, 'cat /proc/loadavg')
 
     return linux.format_uptime(proc_uptime, proc_loadavg)
 
@@ -101,8 +105,8 @@ def execute_ps(client, ps_formatter):
     point?
 
     """
-    
-    proc_1_task = client.execute_command('ls proc/1/task')
+
+    proc_1_task = execute_command(client, 'ls proc/1/task')
     pids = []
 
     for line in proc_1_task.splitlines():
@@ -115,9 +119,9 @@ def execute_ps(client, ps_formatter):
 
     for pid in pids:
         proc_n_stat.append(
-            client.execute_command(f'cat /proc/1/task/{pid}/stat'))
+            execute_command(client, f'cat /proc/1/task/{pid}/stat'))
 
-    proc_stat = client.execute_command('cat /proc/stat')
+    proc_stat = execute_command(client, 'cat /proc/stat')
 
     return ps_formatter.format(proc_stat, proc_n_stat)
 
@@ -125,7 +129,7 @@ def execute_ps(client, ps_formatter):
 def execute_dmesg(client):
     lines = []
 
-    for line in client.execute_command('dmesg').splitlines():
+    for line in execute_command(client, 'dmesg').splitlines():
         lines.append(format_log_entry(line))
 
     return '\n'.join(lines) + '\n'
@@ -167,7 +171,7 @@ def shell_main(client):
                 elif command == 'dmesg':
                     output = execute_dmesg(client)
                 else:
-                    output = client.execute_command(command)
+                    output = execute_command(client, command)
 
                 print_output(output, pipe_commands)
             except ExecuteCommandError as e:
