@@ -175,7 +175,7 @@ def shell_main(client):
 
                 print_output(output, pipe_commands)
             except ExecuteCommandError as e:
-                print(e.output, end='')
+                print(e.output.decode('utf-8', 'replace'), end='')
                 print_error(e.error)
 
 
