@@ -26,6 +26,8 @@
  * This file is part of the Monolinux project.
  */
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -325,6 +327,8 @@ static void *server_main()
     void *message_p;
     uint64_t value;
     int i;
+
+    pthread_setname_np(pthread_self(), "bunga_server");
 
     printf("Starting a Bunga server on ':28000'.\n");
 
