@@ -182,7 +182,6 @@ static void handle_execute_command_complete(struct execute_command_t *command_p)
     char *output_p;
     size_t offset;
     size_t size;
-    char saved;
     size_t chunk_size;
     struct bunga_server_t *server_p;
     struct bunga_server_client_t *client_p;
@@ -200,14 +199,10 @@ static void handle_execute_command_complete(struct execute_command_t *command_p)
             chunk_size = (size - offset);
         }
 
-        saved = output_p[offset + chunk_size];
-        output_p[offset + chunk_size] = '\0';
-
         response_p = bunga_server_init_execute_command_rsp(server_p);
-        response_p->output_p = &output_p[offset];
+        response_p->output.size = chunk_size;
+        response_p->output.buf_p = (uint8_t *)&output_p[offset];
         bunga_server_send(server_p, client_p);
-
-        output_p[offset + chunk_size] = saved;
     }
 
     /* Command result. */

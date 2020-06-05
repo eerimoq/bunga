@@ -122,7 +122,7 @@ struct bunga_execute_command_rsp_repeated_t {
 
 struct bunga_execute_command_rsp_t {
     struct pbtools_message_base_t base;
-    char *output_p;
+    struct pbtools_bytes_t output;
     char *error_p;
 };
 

@@ -89,6 +89,11 @@ class Client(BungaClient):
             await self._connected_event.wait()
 
     async def execute_command(self, command):
+        """Execute given command. Returns the command output as bytes. Raises
+        an exception on command failure.
+
+        """
+
         await self.wait_for_connection()
         self._awaiting_completion = True
         self._command_output = []
@@ -97,7 +102,7 @@ class Client(BungaClient):
         self._complete_event.clear()
         self.send()
         await self._complete_event.wait()
-        output = ''.join(self._command_output)
+        output = b''.join(self._command_output)
 
         if self._error:
             raise ExecuteCommandError(output, self._error)

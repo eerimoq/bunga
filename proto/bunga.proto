@@ -26,7 +26,7 @@ message ExecuteCommandReq {
 
 message ExecuteCommandRsp {
     // Command output. Empty in the last message.
-    string output = 1;
+    bytes output = 1;
     // An error occurred if this is not the empty string. Only present
     // in the last message.
     string error = 2;

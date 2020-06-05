@@ -46,13 +46,12 @@ class ClientTest(unittest.TestCase):
         async def on_client_connected(reader, writer):
             date_req = await reader.readexactly(12)
             self.assertEqual(date_req, b'\x01\x00\x00\x08\n\x06\n\x04date')
-            writer.write(b'\x02\x00\x00\x08\x0a\x06\x0a\x04\x32\x30\x32\x30')
-            writer.write(b'\x02\x00\x00\x02\x0a\x00')
+            writer.write(b'\x02\x00\x00\x08\n\x06\n\x042020')
+            writer.write(b'\x02\x00\x00\x02\n\x00')
 
             bad_req = await reader.readexactly(11)
             self.assertEqual(bad_req, b'\x01\x00\x00\x07\n\x05\n\x03bad')
-            writer.write(b'\x02\x00\x00\x0d\x0a\x0b\x12\x09\x6e\x6f\x74\x20\x66'
-                         b'\x6f\x75\x6e\x64')
+            writer.write(b'\x02\x00\x00\x0d\n\x0b\x12\tnot found')
 
             writer.close()
 
@@ -63,12 +62,12 @@ class ClientTest(unittest.TestCase):
             client.start()
 
             output = await client.execute_command('date')
-            self.assertEqual(output, '2020')
+            self.assertEqual(output, b'2020')
 
             with self.assertRaises(bunga.ExecuteCommandError) as cm:
                 await client.execute_command('bad')
 
-            self.assertEqual(cm.exception.output, '')
+            self.assertEqual(cm.exception.output, b'')
             self.assertEqual(cm.exception.error, 'not found')
 
             client.stop()

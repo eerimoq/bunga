@@ -2,6 +2,7 @@ import threading
 import sys
 import socket
 import bunga
+import bunga.subparsers.shell
 import os
 import unittest
 from unittest.mock import patch
@@ -64,7 +65,7 @@ class CommandLineTest(unittest.TestCase):
             self.assertEqual(str(cm.exception.error), 'Not found')
 
             output = client.execute_command('ls')
-            self.assertIn('foo bar fie', output)
+            self.assertIn(b'foo bar fie', output)
             client.stop()
 
         server.join()
