@@ -80,7 +80,7 @@ def format_thread(name, pid, state, ticks, delta):
 class PsFormatter:
 
     def __init__(self):
-        self._prev_idle_ticks = 0
+        self._prev_idle_ticks = None
         self._prev_ticks = {}
 
     def format(self, proc_stat, proc_n_stat):
@@ -108,7 +108,12 @@ class PsFormatter:
 
         # Faked idle thread.
         ticks = int(proc_stat.split()[4])
-        delta = (ticks - self._prev_idle_ticks)
+
+        if self._prev_idle_ticks is not None:
+            delta = (ticks - self._prev_idle_ticks)
+        else:
+            delta = '-'
+
         self._prev_idle_ticks = ticks
         lines.append(format_thread('idle', '-', '-', ticks, delta))
 

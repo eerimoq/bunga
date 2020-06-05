@@ -55,7 +55,7 @@ class LinuxTest(unittest.TestCase):
             '------------------------------------------------------\n'
             'bunga_server       49   sleeping  315        -\n'
             'ml_worker_pool     36   sleeping  358        -\n'
-            'idle               -    -         177717     177717\n')
+            'idle               -    -         177717     -\n')
 
         formatted = formatter.format(
             'cpu  4812 0 859 178717 0 0 97 0 0 0',
