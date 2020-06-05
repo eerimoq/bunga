@@ -96,6 +96,12 @@ def execute_uptime(client):
 
 
 def execute_ps(client, ps_formatter):
+    """This is a ps command for Monolinux, only showing information for
+    the init process and its threads. Make it more general at some
+    point?
+
+    """
+    
     proc_1_task = client.execute_command('ls proc/1/task')
     pids = []
 
