@@ -3,7 +3,9 @@ from ..client import create_to_path
 
 
 def _do_get_file(args):
-    client = ClientThread(args.uri)
+    client = ClientThread(args.uri,
+                          connection_refused_delay=None,
+                          connect_timeout_delay=None)
     client.start()
     localfile = create_to_path(args.remotefile, args.localfile)
     client.get_file(args.remotefile, localfile)

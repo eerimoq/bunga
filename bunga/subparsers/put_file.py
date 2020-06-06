@@ -1,9 +1,17 @@
+import sys
+import os
+
 from ..client import ClientThread
 from ..client import create_to_path
 
 
 def do_put_file(args):
-    client = ClientThread(args.uri)
+    if not os.path.exists(args.localfile):
+        sys.exit(f"Local file '{args.localfile}' does not exist.")
+
+    client = ClientThread(args.uri,
+                          connection_refused_delay=None,
+                          connect_timeout_delay=None)
     client.start()
     remotefile = create_to_path(args.localfile, args.remotefile)
     client.put_file(args.localfile, remotefile)

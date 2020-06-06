@@ -39,7 +39,11 @@ def is_warning(text):
 
 class Client(BungaClient):
 
-    def __init__(self, uri, loop):
+    def __init__(self,
+                 uri,
+                 loop,
+                 connection_refused_delay=1,
+                 connect_timeout_delay=0):
         super().__init__(uri)
         self._is_connected = False
         self._connected_event = asyncio.Event(loop=loop)
@@ -48,9 +52,13 @@ class Client(BungaClient):
         self._command_output = []
         self._awaiting_completion = False
         self._error = ''
+        self._connect_exception = None
+        self._connection_refused_delay = connection_refused_delay
+        self._connect_timeout_delay = connect_timeout_delay
 
     async def on_connected(self):
         self._is_connected = True
+        self._connect_exception = None
         self._connected_event.set()
 
     async def on_disconnected(self):
@@ -60,6 +68,18 @@ class Client(BungaClient):
         if self._awaiting_completion:
             self._error = 'Connection lost'
             self._complete_event.set()
+
+    async def on_connect_failure(self, exception):
+        if isinstance(exception, ConnectionRefusedError):
+            delay = self._connection_refused_delay
+        else:
+            delay = self._connect_timeout_delay
+
+        if delay is None:
+            self._connect_exception = exception
+            self._connected_event.set()
+
+        return delay
 
     def signal_completed(self, error):
         self._awaiting_completion = False
@@ -87,6 +107,9 @@ class Client(BungaClient):
     async def wait_for_connection(self):
         if not self._is_connected:
             await self._connected_event.wait()
+
+            if self._connect_exception:
+                raise self._connect_exception
 
     async def execute_command(self, command):
         """Execute given command. Returns the command output as bytes. Raises
@@ -186,11 +209,11 @@ def print_log_entry(entry, fout):
 
 class ClientThread(threading.Thread):
 
-    def __init__(self, uri, client_class=Client):
+    def __init__(self, uri, client_class=Client, *args, **kwargs):
         super().__init__()
         LOGGER.info('Server URI: %s', uri)
         self._loop = asyncio.new_event_loop()
-        self._client = client_class(uri, self._loop)
+        self._client = client_class(uri, self._loop, *args, **kwargs)
         self.daemon = True
 
     def run(self):
