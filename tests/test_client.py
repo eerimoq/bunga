@@ -77,6 +77,33 @@ class ClientTest(unittest.TestCase):
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
 
+    def test_execute_command_disconnect_and_no_response(self):
+        asyncio.run(self.execute_command_disconnect_and_no_response())
+
+    async def execute_command_disconnect_and_no_response(self):
+        async def on_client_connected(reader, writer):
+            date_req = await reader.readexactly(12)
+            self.assertEqual(date_req, b'\x01\x00\x00\x08\n\x06\n\x04date')
+            writer.close()
+
+        listener = await asyncio.start_server(on_client_connected, 'localhost', 0)
+
+        async def client_main():
+            client = Client(listener)
+            client.start()
+
+            with self.assertRaises(bunga.ExecuteCommandError) as cm:
+                await client.execute_command('date')
+
+            self.assertEqual(cm.exception.output, b'')
+            self.assertEqual(cm.exception.error, 'Connection lost.')
+
+            client.stop()
+            listener.close()
+
+        await asyncio.wait_for(
+            asyncio.gather(server_main(listener), client_main()), 2)
+
     def test_log_entry(self):
         asyncio.run(self.log_entry())
 

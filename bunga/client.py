@@ -52,6 +52,7 @@ class Client(BungaClient):
         self._command_output = []
         self._awaiting_completion = False
         self._response = None
+        self._error = ''
         self._connect_exception = None
         self._connection_refused_delay = connection_refused_delay
         self._connect_timeout_delay = connect_timeout_delay
@@ -66,7 +67,7 @@ class Client(BungaClient):
         self._is_connected = False
 
         if self._awaiting_completion:
-            self._response.error = 'Connection lost'
+            self._error = 'Connection lost.'
             await self._complete_queue.put(None)
 
     async def on_connect_failure(self, exception):
@@ -84,13 +85,14 @@ class Client(BungaClient):
     async def _signal_completed(self, message):
         self._awaiting_completion = False
         self._response = message
+        self._error = message.error
         await self._complete_queue.put(None)
 
     async def _wait_for_completion(self):
         await self._complete_queue.get()
 
-        if self._response.error:
-            raise Exception(self._response.error)
+        if self._error:
+            raise Exception(self._error)
 
         return self._response
 
@@ -134,8 +136,8 @@ class Client(BungaClient):
         await self._complete_queue.get()
         output = b''.join(self._command_output)
 
-        if self._response.error:
-            raise ExecuteCommandError(output, self._response.error)
+        if self._error:
+            raise ExecuteCommandError(output, self._error)
 
         return output
 
@@ -149,8 +151,8 @@ class Client(BungaClient):
             self.send()
             await self._complete_queue.get()
 
-        if self._response.error:
-            raise Exception(self._response.error)
+        if self._error:
+            raise Exception(self._error)
 
     async def _put_file_setup(self, remote_path, size):
         message = self.init_put_file_req()
