@@ -183,47 +183,66 @@ static void on_get_file_req(struct bunga_server_t *self_p,
     bunga_server_reply(self_p);
 }
 
+static void put_file_begin(struct client_t *client_p,
+                           struct bunga_put_file_req_t *request_p,
+                           struct bunga_put_file_rsp_t *response_p)
+{
+    if (client_p->fput_p != NULL) {
+        fclose(client_p->fput_p);
+    }
+
+    response_p->window_size = 10;
+    client_p->fput_p = fopen(request_p->path_p, "wb");
+
+    if (client_p->fput_p == NULL) {
+        response_p->error_p = "Open failed.";
+    }
+}
+
+static void put_file_data(struct client_t *client_p,
+                          struct bunga_put_file_req_t *request_p,
+                          struct bunga_put_file_rsp_t *response_p)
+{
+    size_t items_written;
+
+    if (client_p->fput_p != NULL) {
+        items_written = fwrite(request_p->data.buf_p,
+                               request_p->data.size,
+                               1,
+                               client_p->fput_p);
+
+        if (items_written != 1) {
+            response_p->error_p = "Write failed.";
+            fclose(client_p->fput_p);
+            client_p->fput_p = NULL;
+        }
+    } else {
+        response_p->error_p = "No file open.";
+    }
+}
+
+static void put_file_end(struct client_t *client_p)
+{
+    fclose(client_p->fput_p);
+    client_p->fput_p = NULL;
+}
+
 static void on_put_file_req(struct bunga_server_t *self_p,
                             struct bunga_server_client_t *bunga_client_p,
                             struct bunga_put_file_req_t *request_p)
 {
-    struct bunga_put_file_rsp_t *response_p;
     struct client_t *client_p;
-    size_t items_written;
+    struct bunga_put_file_rsp_t *response_p;
 
     client_p = client_from_bunga_client(bunga_client_p);
-
     response_p = bunga_server_init_put_file_rsp(self_p);
 
     if (strlen(request_p->path_p) > 0) {
-        if (client_p->fput_p != NULL) {
-            fclose(client_p->fput_p);
-        }
-
-        response_p->window_size = 10;
-        client_p->fput_p = fopen(request_p->path_p, "wb");
-
-        if (client_p->fput_p == NULL) {
-            response_p->error_p = "Open failed.";
-        }
+        put_file_begin(client_p, request_p, response_p);
     } else if (request_p->data.size > 0) {
-        if (client_p->fput_p != NULL) {
-            items_written = fwrite(request_p->data.buf_p,
-                                   request_p->data.size,
-                                   1,
-                                   client_p->fput_p);
-
-            if (items_written != 1) {
-                response_p->error_p = "Write failed.";
-                fclose(client_p->fput_p);
-                client_p->fput_p = NULL;
-            }
-        } else {
-            response_p->error_p = "No file open.";
-        }
+        put_file_data(client_p, request_p, response_p);
     } else if (client_p->fput_p != NULL) {
-        fclose(client_p->fput_p);
-        client_p->fput_p = NULL;
+        put_file_end(client_p);
     }
 
     bunga_server_reply(self_p);
