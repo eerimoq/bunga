@@ -42,13 +42,13 @@ message GetFileReq {
     string path = 1;
     // The maximum number of response messages in flight to the
     // client. Only present in the first message.
-    uint32 response_window_size = 2;
+    uint32 window_size = 2;
 }
 
 message GetFileRsp {
     // File size. Only present in the first message.
     uint64 size = 1;
-    // File data. Empty in last message.
+    // File data. Empty in the last message.
     bytes data = 2;
     // An error occurred if this is not the empty string. Only present
     // in the last message.

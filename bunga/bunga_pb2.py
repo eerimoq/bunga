@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bunga',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xab\x01\n\x0e\x43lientToServer\x12\x37\n\x13\x65xecute_command_req\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x02 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\xd8\x01\n\x0eServerToClient\x12\x37\n\x13\x65xecute_command_rsp\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x02 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"8\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x1c\n\x14response_window_size\x18\x02 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"0\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xab\x01\n\x0e\x43lientToServer\x12\x37\n\x13\x65xecute_command_req\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x02 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\xd8\x01\n\x0eServerToClient\x12\x37\n\x13\x65xecute_command_rsp\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x02 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"/\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0bwindow_size\x18\x02 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"0\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\tb\x06proto3')
 )
 
 
@@ -244,7 +244,7 @@ _GETFILEREQ = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='response_window_size', full_name='bunga.GetFileReq.response_window_size', index=1,
+      name='window_size', full_name='bunga.GetFileReq.window_size', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -263,7 +263,7 @@ _GETFILEREQ = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=534,
-  serialized_end=590,
+  serialized_end=581,
 )
 
 
@@ -307,8 +307,8 @@ _GETFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=592,
-  serialized_end=647,
+  serialized_start=583,
+  serialized_end=638,
 )
 
 
@@ -352,8 +352,8 @@ _PUTFILEREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=649,
-  serialized_end=703,
+  serialized_start=640,
+  serialized_end=694,
 )
 
 
@@ -390,8 +390,8 @@ _PUTFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=705,
-  serialized_end=753,
+  serialized_start=696,
+  serialized_end=744,
 )
 
 _CLIENTTOSERVER.fields_by_name['execute_command_req'].message_type = _EXECUTECOMMANDREQ

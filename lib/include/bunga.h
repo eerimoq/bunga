@@ -61,7 +61,7 @@ struct bunga_get_file_req_repeated_t {
 struct bunga_get_file_req_t {
     struct pbtools_message_base_t base;
     char *path_p;
-    uint32_t response_window_size;
+    uint32_t window_size;
 };
 
 /**

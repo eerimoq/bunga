@@ -139,14 +139,14 @@ void bunga_get_file_req_init(
 {
     self_p->base.heap_p = heap_p;
     self_p->path_p = "";
-    self_p->response_window_size = 0;
+    self_p->window_size = 0;
 }
 
 void bunga_get_file_req_encode_inner(
     struct pbtools_encoder_t *encoder_p,
     struct bunga_get_file_req_t *self_p)
 {
-    pbtools_encoder_write_uint32(encoder_p, 2, self_p->response_window_size);
+    pbtools_encoder_write_uint32(encoder_p, 2, self_p->window_size);
     pbtools_encoder_write_string(encoder_p, 1, self_p->path_p);
 }
 
@@ -164,7 +164,7 @@ void bunga_get_file_req_decode_inner(
             break;
 
         case 2:
-            self_p->response_window_size = pbtools_decoder_read_uint32(decoder_p, wire_type);
+            self_p->window_size = pbtools_decoder_read_uint32(decoder_p, wire_type);
             break;
 
         default:
