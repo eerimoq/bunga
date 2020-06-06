@@ -122,10 +122,44 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def put_file_handler(self, client):
-        req = client.recv(15)
-        self.assertEqual(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
-        req = client.recv(17)
-        self.assertEqual(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+        # Setup.
+        req = client.recv(18)
+        self.assertEqual(len(req), 18)
+        self.assertEqual(req, b'\x01\x00\x00\x0e\x1a\x0c\n\x07put.txt\x10\x89\x04')
+        client.sendall(b'\x02\x00\x00\x04"\x02\x08\n')
+
+        # Data.
+        req = client.recv(210)
+        self.assertEqual(len(req), 210)
+        self.assertEqual(
+            req,
+            b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+            b'789012345678901234567890123456789012345678901234567890123456789012'
+            b'345678901234567890123456789012345678901234567890123456789012345678'
+            b'901234567890123456789012345678901234567890')
+
+        req = client.recv(210)
+        self.assertEqual(len(req), 210)
+        self.assertEqual(
+            req,
+            b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+            b'789012345678901234567890123456789012345678901234567890123456789012'
+            b'345678901234567890123456789012345678901234567890123456789012345678'
+            b'901234567890123456789012345678901234567890')
+
+        req = client.recv(129)
+        self.assertEqual(len(req), 129)
+        self.assertEqual(
+            req,
+            b'\x01\x00\x00}\x1a{\x1ay1234567890123456789012345678901234567890123'
+            b'456789012345678901234567890123456789012345678901234567890123456789'
+            b'01234567890\n')
+
+        client.sendall(b'\x02\x00\x00\x02"\x00')
+        client.sendall(b'\x02\x00\x00\x02"\x00')
+        client.sendall(b'\x02\x00\x00\x02"\x00')
+
+        # Finalize.
         req = client.recv(6)
         self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
         client.sendall(b'\x02\x00\x00\x02"\x00')
@@ -146,13 +180,11 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def put_file_error_handler(self, client):
-        req = client.recv(15)
-        self.assertEqual(req, b'\x01\x00\x00\x0b\x1a\t\n\x07put.txt')
-        req = client.recv(17)
-        self.assertEqual(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
-        req = client.recv(6)
-        self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
-        client.sendall(b'\x02\x00\x00\x0d"\x0b\n\tNot found')
+        # Setup.
+        req = client.recv(18)
+        self.assertEqual(len(req), 18)
+        self.assertEqual(req, b'\x01\x00\x00\x0e\x1a\x0c\n\x07put.txt\x10\x89\x04')
+        client.sendall(b'\x02\x00\x00\x07"\x05\x12\x03bad')
         client.close()
 
     def test_put_file_error(self):
@@ -167,7 +199,7 @@ class CommandLineTest(unittest.TestCase):
             with self.assertRaises(Exception) as cm:
                 bunga.main()
 
-            self.assertEqual(str(cm.exception), 'Not found')
+            self.assertEqual(str(cm.exception), 'bad')
 
         server.join()
         self.assertIsNone(server.exception)

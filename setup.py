@@ -29,7 +29,8 @@ setup(name='bunga',
           'prompt_toolkit',
           'grpcio-tools',
           'ansicolors',
-          'humanfriendly'
+          'humanfriendly',
+          'tqdm'
       ],
       test_suite="tests",
       include_package_data=True,

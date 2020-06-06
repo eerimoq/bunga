@@ -3,3 +3,4 @@ grpcio-tools
 prompt_toolkit
 ansicolors
 humanfriendly
+tqdm

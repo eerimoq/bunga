@@ -169,10 +169,11 @@ static void on_put_file_req(struct bunga_server_t *self_p,
     (void)client_p;
     (void)request_p;
 
-    struct bunga_put_file_rsp_t *response_p;
+    //struct bunga_put_file_rsp_t *response_p;
 
-    response_p = bunga_server_init_put_file_rsp(self_p);
-    response_p->error_p = strerror(ENOSYS);
+    bunga_server_init_put_file_rsp(self_p);
+    printf("size: %ld\n", request_p->size);
+    //response_p->error_p = strerror(ENOSYS);
     bunga_server_reply(self_p);
 }
 

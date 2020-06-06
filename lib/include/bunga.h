@@ -61,6 +61,7 @@ struct bunga_get_file_req_repeated_t {
 struct bunga_get_file_req_t {
     struct pbtools_message_base_t base;
     char *path_p;
+    uint32_t response_window_size;
 };
 
 /**
@@ -74,6 +75,7 @@ struct bunga_put_file_req_repeated_t {
 struct bunga_put_file_req_t {
     struct pbtools_message_base_t base;
     char *path_p;
+    uint64_t size;
     struct pbtools_bytes_t data;
 };
 
@@ -149,7 +151,7 @@ struct bunga_get_file_rsp_repeated_t {
 
 struct bunga_get_file_rsp_t {
     struct pbtools_message_base_t base;
-    int64_t size;
+    uint64_t size;
     struct pbtools_bytes_t data;
     char *error_p;
 };
@@ -164,6 +166,7 @@ struct bunga_put_file_rsp_repeated_t {
 
 struct bunga_put_file_rsp_t {
     struct pbtools_message_base_t base;
+    uint32_t window_size;
     char *error_p;
 };
 

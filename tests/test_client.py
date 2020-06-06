@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 import asyncio
@@ -135,16 +136,49 @@ class ClientTest(unittest.TestCase):
 
     async def put_file(self):
         async def on_client_connected(reader, writer):
-            req = await reader.readexactly(22)
+            # Setup.
+            req = await reader.readexactly(25)
+            self.assertEqual(len(req), 25)
             self.assertEqual(
                 req,
-                b'\x01\x00\x00\x12\x1a\x10\n\x0eput_remote.txt')
-            req = await reader.readexactly(17)
-            self.assertEqual(req, b'\x01\x00\x00\r\x1a\x0b\x12\t12345678\n')
+                b'\x01\x00\x00\x15\x1a\x13\n\x0eput_remote.txt\x10\x89\x04')
+            writer.write(b'\x02\x00\x00\x04"\x02\x08\n')
+
+            # Data.
+            req = await reader.readexactly(210)
+            self.assertEqual(len(req), 210)
+            self.assertEqual(
+                req,
+                b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+                b'789012345678901234567890123456789012345678901234567890123456789012'
+                b'345678901234567890123456789012345678901234567890123456789012345678'
+                b'901234567890123456789012345678901234567890')
+
+            req = await reader.readexactly(210)
+            self.assertEqual(len(req), 210)
+            self.assertEqual(
+                req,
+                b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+                b'789012345678901234567890123456789012345678901234567890123456789012'
+                b'345678901234567890123456789012345678901234567890123456789012345678'
+                b'901234567890123456789012345678901234567890')
+
+            req = await reader.readexactly(129)
+            self.assertEqual(len(req), 129)
+            self.assertEqual(
+                req,
+                b'\x01\x00\x00}\x1a{\x1ay1234567890123456789012345678901234567890123'
+                b'456789012345678901234567890123456789012345678901234567890123456789'
+                b'01234567890\n')
+
+            writer.write(b'\x02\x00\x00\x02"\x00')
+            writer.write(b'\x02\x00\x00\x02"\x00')
+            writer.write(b'\x02\x00\x00\x02"\x00')
+
+            # Finalize.
             req = await reader.readexactly(6)
             self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
             writer.write(b'\x02\x00\x00\x02"\x00')
-
             writer.close()
 
         listener = await asyncio.start_server(on_client_connected, 'localhost', 0)
@@ -153,7 +187,10 @@ class ClientTest(unittest.TestCase):
             client = Client(listener)
             client.start()
 
-            await client.put_file('tests/put.txt', 'put_remote.txt')
+            with open('tests/put.txt', 'rb') as fin:
+                await client.put_file(fin,
+                                      os.stat('tests/put.txt').st_size,
+                                      'put_remote.txt')
 
             client.stop()
             listener.close()

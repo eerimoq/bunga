@@ -1,5 +1,7 @@
 import sys
 import os
+from tqdm.auto import tqdm
+from tqdm.utils import CallbackIOWrapper
 
 from ..client import ClientThread
 from ..client import create_to_path
@@ -14,7 +16,16 @@ def do_put_file(args):
                           connect_timeout_delay=None)
     client.start()
     remotefile = create_to_path(args.localfile, args.remotefile)
-    client.put_file(args.localfile, remotefile)
+    size = os.stat(args.localfile).st_size
+
+    with open(args.localfile, 'rb') as fin:
+        with tqdm(total=size,
+                  unit='B',
+                  unit_scale=True,
+                  unit_divisor=1024) as progress:
+            client.put_file(CallbackIOWrapper(progress.update, fin, 'read'),
+                            size,
+                            remotefile)
 
 
 def add_subparser(subparsers):

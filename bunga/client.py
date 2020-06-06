@@ -47,11 +47,11 @@ class Client(BungaClient):
         super().__init__(uri)
         self._is_connected = False
         self._connected_event = asyncio.Event(loop=loop)
-        self._complete_event = asyncio.Event(loop=loop)
+        self._complete_queue = asyncio.Queue(loop=loop)
         self._fout = None
         self._command_output = []
         self._awaiting_completion = False
-        self._error = ''
+        self._response = None
         self._connect_exception = None
         self._connection_refused_delay = connection_refused_delay
         self._connect_timeout_delay = connect_timeout_delay
@@ -66,8 +66,8 @@ class Client(BungaClient):
         self._is_connected = False
 
         if self._awaiting_completion:
-            self._error = 'Connection lost'
-            self._complete_event.set()
+            self._response.error = 'Connection lost'
+            await self._complete_queue.put(None)
 
     async def on_connect_failure(self, exception):
         if isinstance(exception, ConnectionRefusedError):
@@ -81,16 +81,24 @@ class Client(BungaClient):
 
         return delay
 
-    def signal_completed(self, error):
+    async def _signal_completed(self, message):
         self._awaiting_completion = False
-        self._error = error
-        self._complete_event.set()
+        self._response = message
+        await self._complete_queue.put(None)
+
+    async def _wait_for_completion(self):
+        await self._complete_queue.get()
+
+        if self._response.error:
+            raise Exception(self._response.error)
+
+        return self._response
 
     async def on_execute_command_rsp(self, message):
         if message.output:
             self._command_output.append(message.output)
         else:
-            self.signal_completed(message.error)
+            await self._signal_completed(message)
 
     async def on_log_entry_ind(self, message):
         pass
@@ -99,10 +107,10 @@ class Client(BungaClient):
         if message.data:
             self._fout.write(message.data)
         else:
-            self.signal_completed(message.error)
+            await self._signal_completed(message)
 
     async def on_put_file_rsp(self, message):
-        self.signal_completed(message.error)
+        await self._signal_completed(message)
 
     async def wait_for_connection(self):
         if not self._is_connected:
@@ -122,13 +130,12 @@ class Client(BungaClient):
         self._command_output = []
         message = self.init_execute_command_req()
         message.command = command
-        self._complete_event.clear()
         self.send()
-        await self._complete_event.wait()
+        await self._complete_queue.get()
         output = b''.join(self._command_output)
 
-        if self._error:
-            raise ExecuteCommandError(output, self._error)
+        if self._response.error:
+            raise ExecuteCommandError(output, self._response.error)
 
         return output
 
@@ -139,35 +146,64 @@ class Client(BungaClient):
         with open(local_path, 'wb') as self._fout:
             message = self.init_get_file_req()
             message.path = remote_path
-            self._complete_event.clear()
             self.send()
-            await self._complete_event.wait()
+            await self._complete_queue.get()
 
-        if self._error:
-            raise Exception(self._error)
+        if self._response.error:
+            raise Exception(self._response.error)
 
-    async def put_file(self, local_path, remote_path):
+    async def _put_file_setup(self, remote_path, size):
+        message = self.init_put_file_req()
+        message.path = remote_path
+        message.size = size
+        self.send()
+
+        response = await self._wait_for_completion()
+
+        return response.window_size
+
+    async def _put_file_fill_window(self, fin, window_size):
+        outstanding_requests = 0
+
+        while window_size > 0:
+            message = self.init_put_file_req()
+            message.data = fin.read(200)
+
+            if not message.data:
+                break
+
+            self.send()
+            outstanding_requests += 1
+            window_size -= 1
+
+        return outstanding_requests
+
+    async def _put_file_keep_window_full(self, fin, outstanding_requests):
+        while outstanding_requests > 0:
+            await self._wait_for_completion()
+
+            message = self.init_put_file_req()
+            message.data = fin.read(200)
+
+            if message.data:
+                self.send()
+            else:
+                outstanding_requests -= 1
+
+    async def _put_file_finalize(self, fin):
+        self.init_put_file_req()
+        self.send()
+
+        await self._wait_for_completion()
+
+    async def put_file(self, fin, size, remote_path):
         await self.wait_for_connection()
         self._awaiting_completion = True
-        self._complete_event.clear()
 
-        with open(local_path, 'rb') as fin:
-            message = self.init_put_file_req()
-            message.path = remote_path
-            self.send()
-
-            while True:
-                message = self.init_put_file_req()
-                message.data = fin.read(64)
-                self.send()
-
-                if not message.data:
-                    break
-
-        await self._complete_event.wait()
-
-        if self._error:
-            raise Exception(self._error)
+        window_size = await self._put_file_setup(remote_path, size)
+        outstanding_requests = await self._put_file_fill_window(fin, window_size)
+        await self._put_file_keep_window_full(fin, outstanding_requests)
+        await self._put_file_finalize(fin)
 
 
 def print_info(text):
@@ -234,9 +270,9 @@ class ClientThread(threading.Thread):
             self._client.get_file(remote_path, local_path),
             self._loop).result()
 
-    def put_file(self, local_path, remote_path):
+    def put_file(self, fin, size, remote_path):
         return asyncio.run_coroutine_threadsafe(
-            self._client.put_file(local_path, remote_path),
+            self._client.put_file(fin, size, remote_path),
             self._loop).result()
 
     async def _start(self):
