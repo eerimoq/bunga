@@ -4,19 +4,35 @@ package bunga;
 
 message ClientToServer {
     oneof messages {
-        ExecuteCommandReq execute_command_req = 1;
-        GetFileReq get_file_req = 2;
-        PutFileReq put_file_req = 3;
+        ConnectReq connect_req = 1;
+        ExecuteCommandReq execute_command_req = 2;
+        GetFileReq get_file_req = 3;
+        PutFileReq put_file_req = 4;
     }
 }
 
 message ServerToClient {
     oneof messages {
-        ExecuteCommandRsp execute_command_rsp = 1;
-        LogEntryInd log_entry_ind = 2;
-        GetFileRsp get_file_rsp = 3;
-        PutFileRsp put_file_rsp = 4;
+        ConnectRsp connect_rsp = 1;
+        ExecuteCommandRsp execute_command_rsp = 2;
+        LogEntryInd log_entry_ind = 3;
+        GetFileRsp get_file_rsp = 4;
+        PutFileRsp put_file_rsp = 5;
     }
+}
+
+message ConnectReq {
+    // Requested keep alive timeout in seconds.
+    uint32 keep_alive_timeout = 1;
+    // Maximum message size in bytes the client can receive.
+    uint32 maximum_message_size = 2;
+}
+
+message ConnectRsp {
+    // Final keep alive timeout in seconds.
+    uint32 keep_alive_timeout = 1;
+    // Maximum message size in bytes the server can receive.
+    uint32 maximum_message_size = 2;
 }
 
 message ExecuteCommandReq {

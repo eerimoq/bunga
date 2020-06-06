@@ -15,12 +15,12 @@ class CommandLineTest(unittest.TestCase):
 
     def shell_handler(self, client):
         req = client.recv(10)
-        self.assertEqual(req, b'\x01\x00\x00\x06\n\x04\n\x02ko')
-        client.sendall(b'\x02\x00\x00\x0d\n\x0b\x12\tNot found')
+        self.assertEqual(req, b'\x01\x00\x00\x06\x12\x04\n\x02ko')
+        client.sendall(b'\x02\x00\x00\x0d\x12\x0b\x12\tNot found')
         req = client.recv(10)
-        self.assertEqual(req, b'\x01\x00\x00\x06\n\x04\n\x02ls')
-        client.sendall(b'\x02\x00\x00\x0f\n\r\n\x0bfoo bar fie')
-        client.sendall(b'\x02\x00\x00\x02\n\x00')
+        self.assertEqual(req, b'\x01\x00\x00\x06\x12\x04\n\x02ls')
+        client.sendall(b'\x02\x00\x00\x0f\x12\r\n\x0bfoo bar fie')
+        client.sendall(b'\x02\x00\x00\x02\x12\x00')
         client.close()
 
     def test_shell(self):
@@ -46,9 +46,9 @@ class CommandLineTest(unittest.TestCase):
 
     def get_file_handler(self, client):
         req = client.recv(21)
-        self.assertEqual(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
-        client.sendall(b'\x02\x00\x00\x0f\x1a\r\x08\t\x12\t12345678\n')
-        client.sendall(b'\x02\x00\x00\x02\x1a\x00')
+        self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
+        client.sendall(b'\x02\x00\x00\x0f"\r\x08\t\x12\t12345678\n')
+        client.sendall(b'\x02\x00\x00\x02"\x00')
         client.close()
 
     def test_get_file(self):
@@ -73,8 +73,8 @@ class CommandLineTest(unittest.TestCase):
 
     def get_file_error_handler(self, client):
         req = client.recv(21)
-        self.assertEqual(req, b'\x01\x00\x00\x11\x12\x0f\n\rtests/put.txt')
-        client.sendall(b'\x02\x00\x00\x0d\x1a\x0b\x1a\tNot found')
+        self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
+        client.sendall(b'\x02\x00\x00\x0d"\x0b\x1a\tNot found')
         client.close()
 
     def test_get_file_error(self):
@@ -98,15 +98,15 @@ class CommandLineTest(unittest.TestCase):
         # Setup.
         req = client.recv(18)
         self.assertEqual(len(req), 18)
-        self.assertEqual(req, b'\x01\x00\x00\x0e\x1a\x0c\n\x07put.txt\x10\x89\x04')
-        client.sendall(b'\x02\x00\x00\x04"\x02\x08\n')
+        self.assertEqual(req, b'\x01\x00\x00\x0e"\x0c\n\x07put.txt\x10\x89\x04')
+        client.sendall(b'\x02\x00\x00\x04*\x02\x08\n')
 
         # Data.
         req = client.recv(210)
         self.assertEqual(len(req), 210)
         self.assertEqual(
             req,
-            b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+            b'\x01\x00\x00\xce"\xcb\x01\x1a\xc8\x0112345678901234567890123456'
             b'789012345678901234567890123456789012345678901234567890123456789012'
             b'345678901234567890123456789012345678901234567890123456789012345678'
             b'901234567890123456789012345678901234567890')
@@ -115,7 +115,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(len(req), 210)
         self.assertEqual(
             req,
-            b'\x01\x00\x00\xce\x1a\xcb\x01\x1a\xc8\x0112345678901234567890123456'
+            b'\x01\x00\x00\xce"\xcb\x01\x1a\xc8\x0112345678901234567890123456'
             b'789012345678901234567890123456789012345678901234567890123456789012'
             b'345678901234567890123456789012345678901234567890123456789012345678'
             b'901234567890123456789012345678901234567890')
@@ -124,18 +124,18 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(len(req), 129)
         self.assertEqual(
             req,
-            b'\x01\x00\x00}\x1a{\x1ay1234567890123456789012345678901234567890123'
+            b'\x01\x00\x00}"{\x1ay1234567890123456789012345678901234567890123'
             b'456789012345678901234567890123456789012345678901234567890123456789'
             b'01234567890\n')
 
-        client.sendall(b'\x02\x00\x00\x02"\x00')
-        client.sendall(b'\x02\x00\x00\x02"\x00')
-        client.sendall(b'\x02\x00\x00\x02"\x00')
+        client.sendall(b'\x02\x00\x00\x02*\x00')
+        client.sendall(b'\x02\x00\x00\x02*\x00')
+        client.sendall(b'\x02\x00\x00\x02*\x00')
 
         # Finalize.
         req = client.recv(6)
-        self.assertEqual(req, b'\x01\x00\x00\x02\x1a\x00')
-        client.sendall(b'\x02\x00\x00\x02"\x00')
+        self.assertEqual(req, b'\x01\x00\x00\x02"\x00')
+        client.sendall(b'\x02\x00\x00\x02*\x00')
         client.close()
 
     def test_put_file(self):
@@ -156,8 +156,8 @@ class CommandLineTest(unittest.TestCase):
         # Setup.
         req = client.recv(18)
         self.assertEqual(len(req), 18)
-        self.assertEqual(req, b'\x01\x00\x00\x0e\x1a\x0c\n\x07put.txt\x10\x89\x04')
-        client.sendall(b'\x02\x00\x00\x07"\x05\x12\x03bad')
+        self.assertEqual(req, b'\x01\x00\x00\x0e"\x0c\n\x07put.txt\x10\x89\x04')
+        client.sendall(b'\x02\x00\x00\x07*\x05\x12\x03bad')
         client.close()
 
     def test_put_file_error(self):

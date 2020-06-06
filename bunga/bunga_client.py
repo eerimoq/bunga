@@ -101,6 +101,11 @@ class BungaClient:
         else:
             return 0
 
+    async def on_connect_rsp(self, message):
+        """Called when a connect_rsp message is received from the server.
+
+        """
+
     async def on_execute_command_rsp(self, message):
         """Called when a execute_command_rsp message is received from the server.
 
@@ -120,6 +125,16 @@ class BungaClient:
         """Called when a put_file_rsp message is received from the server.
 
         """
+
+    def init_connect_req(self):
+        """Prepare a connect_req message. Call `send()` to send it.
+
+        """
+
+        self._output = bunga_pb2.ClientToServer()
+        self._output.connect_req.SetInParent()
+
+        return self._output.connect_req
 
     def init_execute_command_req(self):
         """Prepare a execute_command_req message. Call `send()` to send it.
@@ -199,7 +214,9 @@ class BungaClient:
         message.ParseFromString(payload)
         choice = message.WhichOneof('messages')
 
-        if choice == 'execute_command_rsp':
+        if choice == 'connect_rsp':
+            await self.on_connect_rsp(message.connect_rsp)
+        elif choice == 'execute_command_rsp':
             await self.on_execute_command_rsp(message.execute_command_rsp)
         elif choice == 'log_entry_ind':
             await self.on_log_entry_ind(message.log_entry_ind)

@@ -36,6 +36,11 @@
 struct bunga_server_t;
 struct bunga_server_client_t;
 
+typedef void (*bunga_server_on_connect_req_t)(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_connect_req_t *message_p);
+
 typedef void (*bunga_server_on_execute_command_req_t)(
     struct bunga_server_t *self_p,
     struct bunga_server_client_t *client_p,
@@ -71,6 +76,7 @@ struct bunga_server_t {
     } server;
     bunga_server_on_client_connected_t on_client_connected;
     bunga_server_on_client_disconnected_t on_client_disconnected;
+    bunga_server_on_connect_req_t on_connect_req;
     bunga_server_on_execute_command_req_t on_execute_command_req;
     bunga_server_on_get_file_req_t on_get_file_req;
     bunga_server_on_put_file_req_t on_put_file_req;
@@ -137,6 +143,7 @@ int bunga_server_init(
     size_t workspace_out_size,
     bunga_server_on_client_connected_t on_client_connected,
     bunga_server_on_client_disconnected_t on_client_disconnected,
+    bunga_server_on_connect_req_t on_connect_req,
     bunga_server_on_execute_command_req_t on_execute_command_req,
     bunga_server_on_get_file_req_t on_get_file_req,
     bunga_server_on_put_file_req_t on_put_file_req,
@@ -183,6 +190,13 @@ void bunga_server_broadcast(struct bunga_server_t *self_p);
 void bunga_server_disconnect(
     struct bunga_server_t *self_p,
     struct bunga_server_client_t *client_p);
+
+/**
+ * Prepare a connect_rsp message. Call `send()`, `reply()` or `broadcast()`
+ * to send it.
+ */
+struct bunga_connect_rsp_t *bunga_server_init_connect_rsp(
+    struct bunga_server_t *self_p);
 
 /**
  * Prepare a execute_command_rsp message. Call `send()`, `reply()` or `broadcast()`

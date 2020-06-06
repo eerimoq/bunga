@@ -35,6 +35,110 @@
 #    error "Number of bits in a char must be 8."
 #endif
 
+void bunga_connect_req_init(
+    struct bunga_connect_req_t *self_p,
+    struct pbtools_heap_t *heap_p)
+{
+    self_p->base.heap_p = heap_p;
+    self_p->keep_alive_timeout = 0;
+    self_p->maximum_message_size = 0;
+}
+
+void bunga_connect_req_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_connect_req_t *self_p)
+{
+    pbtools_encoder_write_uint32(encoder_p, 2, self_p->maximum_message_size);
+    pbtools_encoder_write_uint32(encoder_p, 1, self_p->keep_alive_timeout);
+}
+
+void bunga_connect_req_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_connect_req_t *self_p)
+{
+    int wire_type;
+
+    while (pbtools_decoder_available(decoder_p)) {
+        switch (pbtools_decoder_read_tag(decoder_p, &wire_type)) {
+
+        case 1:
+            self_p->keep_alive_timeout = pbtools_decoder_read_uint32(decoder_p, wire_type);
+            break;
+
+        case 2:
+            self_p->maximum_message_size = pbtools_decoder_read_uint32(decoder_p, wire_type);
+            break;
+
+        default:
+            pbtools_decoder_skip_field(decoder_p, wire_type);
+            break;
+        }
+    }
+}
+
+void bunga_connect_req_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_connect_req_repeated_t *repeated_p)
+{
+    pbtools_encode_repeated_inner(
+        encoder_p,
+        field_number,
+        (struct pbtools_repeated_message_t *)repeated_p,
+        sizeof(struct bunga_connect_req_t),
+        (pbtools_message_encode_inner_t)bunga_connect_req_encode_inner);
+}
+
+void bunga_connect_req_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_connect_req_repeated_t *repeated_p)
+{
+    pbtools_decode_repeated_inner(
+        decoder_p,
+        repeated_info_p,
+        (struct pbtools_repeated_message_t *)repeated_p,
+        sizeof(struct bunga_connect_req_t),
+        (pbtools_message_init_t)bunga_connect_req_init,
+        (pbtools_message_decode_inner_t)bunga_connect_req_decode_inner);
+}
+
+struct bunga_connect_req_t *
+bunga_connect_req_new(
+    void *workspace_p,
+    size_t size)
+{
+    return (pbtools_message_new(
+                workspace_p,
+                size,
+                sizeof(struct bunga_connect_req_t),
+                (pbtools_message_init_t)bunga_connect_req_init));
+}
+
+int bunga_connect_req_encode(
+    struct bunga_connect_req_t *self_p,
+    uint8_t *encoded_p,
+    size_t size)
+{
+    return (pbtools_message_encode(
+                &self_p->base,
+                encoded_p,
+                size,
+                (pbtools_message_encode_inner_t)bunga_connect_req_encode_inner));
+}
+
+int bunga_connect_req_decode(
+    struct bunga_connect_req_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size)
+{
+    return (pbtools_message_decode(
+                &self_p->base,
+                encoded_p,
+                size,
+                (pbtools_message_decode_inner_t)bunga_connect_req_decode_inner));
+}
+
 void bunga_execute_command_req_init(
     struct bunga_execute_command_req_t *self_p,
     struct pbtools_heap_t *heap_p)
@@ -347,6 +451,15 @@ int bunga_put_file_req_decode(
                 (pbtools_message_decode_inner_t)bunga_put_file_req_decode_inner));
 }
 
+void bunga_client_to_server_messages_connect_req_init(
+    struct bunga_client_to_server_t *self_p)
+{
+    self_p->messages.choice = bunga_client_to_server_messages_choice_connect_req_e;
+    bunga_connect_req_init(
+        &self_p->messages.value.connect_req,
+        self_p->base.heap_p);
+}
+
 void bunga_client_to_server_messages_execute_command_req_init(
     struct bunga_client_to_server_t *self_p)
 {
@@ -380,10 +493,18 @@ void bunga_client_to_server_messages_encode(
 {
     switch (self_p->choice) {
 
-    case bunga_client_to_server_messages_choice_execute_command_req_e:
+    case bunga_client_to_server_messages_choice_connect_req_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
             1,
+            &self_p->value.connect_req.base,
+            (pbtools_message_encode_inner_t)bunga_connect_req_encode_inner);
+        break;
+
+    case bunga_client_to_server_messages_choice_execute_command_req_e:
+        pbtools_encoder_sub_message_encode_always(
+            encoder_p,
+            2,
             &self_p->value.execute_command_req.base,
             (pbtools_message_encode_inner_t)bunga_execute_command_req_encode_inner);
         break;
@@ -391,7 +512,7 @@ void bunga_client_to_server_messages_encode(
     case bunga_client_to_server_messages_choice_get_file_req_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
-            2,
+            3,
             &self_p->value.get_file_req.base,
             (pbtools_message_encode_inner_t)bunga_get_file_req_encode_inner);
         break;
@@ -399,7 +520,7 @@ void bunga_client_to_server_messages_encode(
     case bunga_client_to_server_messages_choice_put_file_req_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
-            3,
+            4,
             &self_p->value.put_file_req.base,
             (pbtools_message_encode_inner_t)bunga_put_file_req_encode_inner);
         break;
@@ -407,6 +528,19 @@ void bunga_client_to_server_messages_encode(
     default:
         break;
     }
+}
+
+static void bunga_client_to_server_messages_connect_req_decode(
+    struct pbtools_decoder_t *decoder_p,
+    int wire_type,
+    struct bunga_client_to_server_t *self_p)
+{
+    bunga_client_to_server_messages_connect_req_init(self_p);
+    pbtools_decoder_sub_message_decode(
+        decoder_p,
+        wire_type,
+        &self_p->messages.value.connect_req.base,
+        (pbtools_message_decode_inner_t)bunga_connect_req_decode_inner);
 }
 
 static void bunga_client_to_server_messages_execute_command_req_decode(
@@ -473,20 +607,27 @@ void bunga_client_to_server_decode_inner(
         switch (pbtools_decoder_read_tag(decoder_p, &wire_type)) {
 
         case 1:
-            bunga_client_to_server_messages_execute_command_req_decode(
+            bunga_client_to_server_messages_connect_req_decode(
                 decoder_p,
                 wire_type,
                 self_p);
             break;
 
         case 2:
-            bunga_client_to_server_messages_get_file_req_decode(
+            bunga_client_to_server_messages_execute_command_req_decode(
                 decoder_p,
                 wire_type,
                 self_p);
             break;
 
         case 3:
+            bunga_client_to_server_messages_get_file_req_decode(
+                decoder_p,
+                wire_type,
+                self_p);
+            break;
+
+        case 4:
             bunga_client_to_server_messages_put_file_req_decode(
                 decoder_p,
                 wire_type,
@@ -561,6 +702,110 @@ int bunga_client_to_server_decode(
                 encoded_p,
                 size,
                 (pbtools_message_decode_inner_t)bunga_client_to_server_decode_inner));
+}
+
+void bunga_connect_rsp_init(
+    struct bunga_connect_rsp_t *self_p,
+    struct pbtools_heap_t *heap_p)
+{
+    self_p->base.heap_p = heap_p;
+    self_p->keep_alive_timeout = 0;
+    self_p->maximum_message_size = 0;
+}
+
+void bunga_connect_rsp_encode_inner(
+    struct pbtools_encoder_t *encoder_p,
+    struct bunga_connect_rsp_t *self_p)
+{
+    pbtools_encoder_write_uint32(encoder_p, 2, self_p->maximum_message_size);
+    pbtools_encoder_write_uint32(encoder_p, 1, self_p->keep_alive_timeout);
+}
+
+void bunga_connect_rsp_decode_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct bunga_connect_rsp_t *self_p)
+{
+    int wire_type;
+
+    while (pbtools_decoder_available(decoder_p)) {
+        switch (pbtools_decoder_read_tag(decoder_p, &wire_type)) {
+
+        case 1:
+            self_p->keep_alive_timeout = pbtools_decoder_read_uint32(decoder_p, wire_type);
+            break;
+
+        case 2:
+            self_p->maximum_message_size = pbtools_decoder_read_uint32(decoder_p, wire_type);
+            break;
+
+        default:
+            pbtools_decoder_skip_field(decoder_p, wire_type);
+            break;
+        }
+    }
+}
+
+void bunga_connect_rsp_encode_repeated_inner(
+    struct pbtools_encoder_t *encoder_p,
+    int field_number,
+    struct bunga_connect_rsp_repeated_t *repeated_p)
+{
+    pbtools_encode_repeated_inner(
+        encoder_p,
+        field_number,
+        (struct pbtools_repeated_message_t *)repeated_p,
+        sizeof(struct bunga_connect_rsp_t),
+        (pbtools_message_encode_inner_t)bunga_connect_rsp_encode_inner);
+}
+
+void bunga_connect_rsp_decode_repeated_inner(
+    struct pbtools_decoder_t *decoder_p,
+    struct pbtools_repeated_info_t *repeated_info_p,
+    struct bunga_connect_rsp_repeated_t *repeated_p)
+{
+    pbtools_decode_repeated_inner(
+        decoder_p,
+        repeated_info_p,
+        (struct pbtools_repeated_message_t *)repeated_p,
+        sizeof(struct bunga_connect_rsp_t),
+        (pbtools_message_init_t)bunga_connect_rsp_init,
+        (pbtools_message_decode_inner_t)bunga_connect_rsp_decode_inner);
+}
+
+struct bunga_connect_rsp_t *
+bunga_connect_rsp_new(
+    void *workspace_p,
+    size_t size)
+{
+    return (pbtools_message_new(
+                workspace_p,
+                size,
+                sizeof(struct bunga_connect_rsp_t),
+                (pbtools_message_init_t)bunga_connect_rsp_init));
+}
+
+int bunga_connect_rsp_encode(
+    struct bunga_connect_rsp_t *self_p,
+    uint8_t *encoded_p,
+    size_t size)
+{
+    return (pbtools_message_encode(
+                &self_p->base,
+                encoded_p,
+                size,
+                (pbtools_message_encode_inner_t)bunga_connect_rsp_encode_inner));
+}
+
+int bunga_connect_rsp_decode(
+    struct bunga_connect_rsp_t *self_p,
+    const uint8_t *encoded_p,
+    size_t size)
+{
+    return (pbtools_message_decode(
+                &self_p->base,
+                encoded_p,
+                size,
+                (pbtools_message_decode_inner_t)bunga_connect_rsp_decode_inner));
 }
 
 void bunga_execute_command_rsp_init(
@@ -1000,6 +1245,15 @@ int bunga_put_file_rsp_decode(
                 (pbtools_message_decode_inner_t)bunga_put_file_rsp_decode_inner));
 }
 
+void bunga_server_to_client_messages_connect_rsp_init(
+    struct bunga_server_to_client_t *self_p)
+{
+    self_p->messages.choice = bunga_server_to_client_messages_choice_connect_rsp_e;
+    bunga_connect_rsp_init(
+        &self_p->messages.value.connect_rsp,
+        self_p->base.heap_p);
+}
+
 void bunga_server_to_client_messages_execute_command_rsp_init(
     struct bunga_server_to_client_t *self_p)
 {
@@ -1042,10 +1296,18 @@ void bunga_server_to_client_messages_encode(
 {
     switch (self_p->choice) {
 
-    case bunga_server_to_client_messages_choice_execute_command_rsp_e:
+    case bunga_server_to_client_messages_choice_connect_rsp_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
             1,
+            &self_p->value.connect_rsp.base,
+            (pbtools_message_encode_inner_t)bunga_connect_rsp_encode_inner);
+        break;
+
+    case bunga_server_to_client_messages_choice_execute_command_rsp_e:
+        pbtools_encoder_sub_message_encode_always(
+            encoder_p,
+            2,
             &self_p->value.execute_command_rsp.base,
             (pbtools_message_encode_inner_t)bunga_execute_command_rsp_encode_inner);
         break;
@@ -1053,7 +1315,7 @@ void bunga_server_to_client_messages_encode(
     case bunga_server_to_client_messages_choice_log_entry_ind_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
-            2,
+            3,
             &self_p->value.log_entry_ind.base,
             (pbtools_message_encode_inner_t)bunga_log_entry_ind_encode_inner);
         break;
@@ -1061,7 +1323,7 @@ void bunga_server_to_client_messages_encode(
     case bunga_server_to_client_messages_choice_get_file_rsp_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
-            3,
+            4,
             &self_p->value.get_file_rsp.base,
             (pbtools_message_encode_inner_t)bunga_get_file_rsp_encode_inner);
         break;
@@ -1069,7 +1331,7 @@ void bunga_server_to_client_messages_encode(
     case bunga_server_to_client_messages_choice_put_file_rsp_e:
         pbtools_encoder_sub_message_encode_always(
             encoder_p,
-            4,
+            5,
             &self_p->value.put_file_rsp.base,
             (pbtools_message_encode_inner_t)bunga_put_file_rsp_encode_inner);
         break;
@@ -1077,6 +1339,19 @@ void bunga_server_to_client_messages_encode(
     default:
         break;
     }
+}
+
+static void bunga_server_to_client_messages_connect_rsp_decode(
+    struct pbtools_decoder_t *decoder_p,
+    int wire_type,
+    struct bunga_server_to_client_t *self_p)
+{
+    bunga_server_to_client_messages_connect_rsp_init(self_p);
+    pbtools_decoder_sub_message_decode(
+        decoder_p,
+        wire_type,
+        &self_p->messages.value.connect_rsp.base,
+        (pbtools_message_decode_inner_t)bunga_connect_rsp_decode_inner);
 }
 
 static void bunga_server_to_client_messages_execute_command_rsp_decode(
@@ -1156,27 +1431,34 @@ void bunga_server_to_client_decode_inner(
         switch (pbtools_decoder_read_tag(decoder_p, &wire_type)) {
 
         case 1:
-            bunga_server_to_client_messages_execute_command_rsp_decode(
+            bunga_server_to_client_messages_connect_rsp_decode(
                 decoder_p,
                 wire_type,
                 self_p);
             break;
 
         case 2:
-            bunga_server_to_client_messages_log_entry_ind_decode(
+            bunga_server_to_client_messages_execute_command_rsp_decode(
                 decoder_p,
                 wire_type,
                 self_p);
             break;
 
         case 3:
-            bunga_server_to_client_messages_get_file_rsp_decode(
+            bunga_server_to_client_messages_log_entry_ind_decode(
                 decoder_p,
                 wire_type,
                 self_p);
             break;
 
         case 4:
+            bunga_server_to_client_messages_get_file_rsp_decode(
+                decoder_p,
+                wire_type,
+                self_p);
+            break;
+
+        case 5:
             bunga_server_to_client_messages_put_file_rsp_decode(
                 decoder_p,
                 wire_type,

@@ -155,6 +155,17 @@ static void execute_command_job(struct execute_command_t *command_p)
     ml_queue_put(command_p->queue_p, command_p);
 }
 
+static void on_connect_req(struct bunga_server_t *self_p,
+                           struct bunga_server_client_t *client_p,
+                           struct bunga_connect_req_t *request_p)
+{
+    (void)client_p;
+    (void)request_p;
+
+    bunga_server_init_connect_rsp(self_p);
+    bunga_server_reply(self_p);
+}
+
 static void on_execute_command_req(struct bunga_server_t *self_p,
                                    struct bunga_server_client_t *client_p,
                                    struct bunga_execute_command_req_t *request_p)
@@ -442,6 +453,7 @@ static void *server_main()
                             sizeof(workspace_out),
                             on_client_connected,
                             on_client_disconnected,
+                            on_connect_req,
                             on_execute_command_req,
                             on_get_file_req,
                             on_put_file_req,

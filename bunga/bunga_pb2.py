@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bunga',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xab\x01\n\x0e\x43lientToServer\x12\x37\n\x13\x65xecute_command_req\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x02 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\xd8\x01\n\x0eServerToClient\x12\x37\n\x13\x65xecute_command_rsp\x18\x01 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x02 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"/\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0bwindow_size\x18\x02 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"0\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xd5\x01\n\x0e\x43lientToServer\x12(\n\x0b\x63onnect_req\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectReqH\x00\x12\x37\n\x13\x65xecute_command_req\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\x82\x02\n\x0eServerToClient\x12(\n\x0b\x63onnect_rsp\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectRspH\x00\x12\x37\n\x13\x65xecute_command_rsp\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x03 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x05 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"F\n\nConnectReq\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"F\n\nConnectRsp\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"/\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0bwindow_size\x18\x02 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"0\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\tb\x06proto3')
 )
 
 
@@ -34,22 +34,29 @@ _CLIENTTOSERVER = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='execute_command_req', full_name='bunga.ClientToServer.execute_command_req', index=0,
+      name='connect_req', full_name='bunga.ClientToServer.connect_req', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='get_file_req', full_name='bunga.ClientToServer.get_file_req', index=1,
+      name='execute_command_req', full_name='bunga.ClientToServer.execute_command_req', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='put_file_req', full_name='bunga.ClientToServer.put_file_req', index=2,
+      name='get_file_req', full_name='bunga.ClientToServer.get_file_req', index=2,
       number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='put_file_req', full_name='bunga.ClientToServer.put_file_req', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -70,7 +77,7 @@ _CLIENTTOSERVER = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=23,
-  serialized_end=194,
+  serialized_end=236,
 )
 
 
@@ -82,29 +89,36 @@ _SERVERTOCLIENT = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='execute_command_rsp', full_name='bunga.ServerToClient.execute_command_rsp', index=0,
+      name='connect_rsp', full_name='bunga.ServerToClient.connect_rsp', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='log_entry_ind', full_name='bunga.ServerToClient.log_entry_ind', index=1,
+      name='execute_command_rsp', full_name='bunga.ServerToClient.execute_command_rsp', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='get_file_rsp', full_name='bunga.ServerToClient.get_file_rsp', index=2,
+      name='log_entry_ind', full_name='bunga.ServerToClient.log_entry_ind', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='put_file_rsp', full_name='bunga.ServerToClient.put_file_rsp', index=3,
+      name='get_file_rsp', full_name='bunga.ServerToClient.get_file_rsp', index=3,
       number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='put_file_rsp', full_name='bunga.ServerToClient.put_file_rsp', index=4,
+      number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -124,8 +138,84 @@ _SERVERTOCLIENT = _descriptor.Descriptor(
       name='messages', full_name='bunga.ServerToClient.messages',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=197,
-  serialized_end=413,
+  serialized_start=239,
+  serialized_end=497,
+)
+
+
+_CONNECTREQ = _descriptor.Descriptor(
+  name='ConnectReq',
+  full_name='bunga.ConnectReq',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='keep_alive_timeout', full_name='bunga.ConnectReq.keep_alive_timeout', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='maximum_message_size', full_name='bunga.ConnectReq.maximum_message_size', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=499,
+  serialized_end=569,
+)
+
+
+_CONNECTRSP = _descriptor.Descriptor(
+  name='ConnectRsp',
+  full_name='bunga.ConnectRsp',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='keep_alive_timeout', full_name='bunga.ConnectRsp.keep_alive_timeout', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='maximum_message_size', full_name='bunga.ConnectRsp.maximum_message_size', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=571,
+  serialized_end=641,
 )
 
 
@@ -155,8 +245,8 @@ _EXECUTECOMMANDREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=415,
-  serialized_end=451,
+  serialized_start=643,
+  serialized_end=679,
 )
 
 
@@ -193,8 +283,8 @@ _EXECUTECOMMANDRSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=453,
-  serialized_end=503,
+  serialized_start=681,
+  serialized_end=731,
 )
 
 
@@ -224,8 +314,8 @@ _LOGENTRYIND = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=505,
-  serialized_end=532,
+  serialized_start=733,
+  serialized_end=760,
 )
 
 
@@ -262,8 +352,8 @@ _GETFILEREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=534,
-  serialized_end=581,
+  serialized_start=762,
+  serialized_end=809,
 )
 
 
@@ -307,8 +397,8 @@ _GETFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=583,
-  serialized_end=638,
+  serialized_start=811,
+  serialized_end=866,
 )
 
 
@@ -352,8 +442,8 @@ _PUTFILEREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=640,
-  serialized_end=694,
+  serialized_start=868,
+  serialized_end=922,
 )
 
 
@@ -390,13 +480,17 @@ _PUTFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=696,
-  serialized_end=744,
+  serialized_start=924,
+  serialized_end=972,
 )
 
+_CLIENTTOSERVER.fields_by_name['connect_req'].message_type = _CONNECTREQ
 _CLIENTTOSERVER.fields_by_name['execute_command_req'].message_type = _EXECUTECOMMANDREQ
 _CLIENTTOSERVER.fields_by_name['get_file_req'].message_type = _GETFILEREQ
 _CLIENTTOSERVER.fields_by_name['put_file_req'].message_type = _PUTFILEREQ
+_CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
+  _CLIENTTOSERVER.fields_by_name['connect_req'])
+_CLIENTTOSERVER.fields_by_name['connect_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
 _CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
   _CLIENTTOSERVER.fields_by_name['execute_command_req'])
 _CLIENTTOSERVER.fields_by_name['execute_command_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
@@ -406,10 +500,14 @@ _CLIENTTOSERVER.fields_by_name['get_file_req'].containing_oneof = _CLIENTTOSERVE
 _CLIENTTOSERVER.oneofs_by_name['messages'].fields.append(
   _CLIENTTOSERVER.fields_by_name['put_file_req'])
 _CLIENTTOSERVER.fields_by_name['put_file_req'].containing_oneof = _CLIENTTOSERVER.oneofs_by_name['messages']
+_SERVERTOCLIENT.fields_by_name['connect_rsp'].message_type = _CONNECTRSP
 _SERVERTOCLIENT.fields_by_name['execute_command_rsp'].message_type = _EXECUTECOMMANDRSP
 _SERVERTOCLIENT.fields_by_name['log_entry_ind'].message_type = _LOGENTRYIND
 _SERVERTOCLIENT.fields_by_name['get_file_rsp'].message_type = _GETFILERSP
 _SERVERTOCLIENT.fields_by_name['put_file_rsp'].message_type = _PUTFILERSP
+_SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
+  _SERVERTOCLIENT.fields_by_name['connect_rsp'])
+_SERVERTOCLIENT.fields_by_name['connect_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
 _SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
   _SERVERTOCLIENT.fields_by_name['execute_command_rsp'])
 _SERVERTOCLIENT.fields_by_name['execute_command_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
@@ -424,6 +522,8 @@ _SERVERTOCLIENT.oneofs_by_name['messages'].fields.append(
 _SERVERTOCLIENT.fields_by_name['put_file_rsp'].containing_oneof = _SERVERTOCLIENT.oneofs_by_name['messages']
 DESCRIPTOR.message_types_by_name['ClientToServer'] = _CLIENTTOSERVER
 DESCRIPTOR.message_types_by_name['ServerToClient'] = _SERVERTOCLIENT
+DESCRIPTOR.message_types_by_name['ConnectReq'] = _CONNECTREQ
+DESCRIPTOR.message_types_by_name['ConnectRsp'] = _CONNECTRSP
 DESCRIPTOR.message_types_by_name['ExecuteCommandReq'] = _EXECUTECOMMANDREQ
 DESCRIPTOR.message_types_by_name['ExecuteCommandRsp'] = _EXECUTECOMMANDRSP
 DESCRIPTOR.message_types_by_name['LogEntryInd'] = _LOGENTRYIND
@@ -446,6 +546,20 @@ ServerToClient = _reflection.GeneratedProtocolMessageType('ServerToClient', (_me
   # @@protoc_insertion_point(class_scope:bunga.ServerToClient)
   ))
 _sym_db.RegisterMessage(ServerToClient)
+
+ConnectReq = _reflection.GeneratedProtocolMessageType('ConnectReq', (_message.Message,), dict(
+  DESCRIPTOR = _CONNECTREQ,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.ConnectReq)
+  ))
+_sym_db.RegisterMessage(ConnectReq)
+
+ConnectRsp = _reflection.GeneratedProtocolMessageType('ConnectRsp', (_message.Message,), dict(
+  DESCRIPTOR = _CONNECTRSP,
+  __module__ = 'bunga_pb2'
+  # @@protoc_insertion_point(class_scope:bunga.ConnectRsp)
+  ))
+_sym_db.RegisterMessage(ConnectRsp)
 
 ExecuteCommandReq = _reflection.GeneratedProtocolMessageType('ExecuteCommandReq', (_message.Message,), dict(
   DESCRIPTOR = _EXECUTECOMMANDREQ,

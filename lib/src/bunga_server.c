@@ -384,6 +384,13 @@ static int handle_message_user(struct bunga_server_t *self_p,
 
     switch (message_p->messages.choice) {
 
+    case bunga_client_to_server_messages_choice_connect_req_e:
+        self_p->on_connect_req(
+            self_p,
+            client_p,
+            &message_p->messages.value.connect_req);
+        break;
+
     case bunga_client_to_server_messages_choice_execute_command_req_e:
         self_p->on_execute_command_req(
             self_p,
@@ -566,6 +573,16 @@ static void process_client_keep_alive_timer(struct bunga_server_t *self_p,
     client_pending_disconnect(client_p, self_p);
 }
 
+static void on_connect_req_default(
+    struct bunga_server_t *self_p,
+    struct bunga_server_client_t *client_p,
+    struct bunga_connect_req_t *message_p)
+{
+    (void)self_p;
+    (void)client_p;
+    (void)message_p;
+}
+
 static void on_execute_command_req_default(
     struct bunga_server_t *self_p,
     struct bunga_server_client_t *client_p,
@@ -653,6 +670,7 @@ int bunga_server_init(
     size_t workspace_out_size,
     bunga_server_on_client_connected_t on_client_connected,
     bunga_server_on_client_disconnected_t on_client_disconnected,
+    bunga_server_on_connect_req_t on_connect_req,
     bunga_server_on_execute_command_req_t on_execute_command_req,
     bunga_server_on_get_file_req_t on_get_file_req,
     bunga_server_on_put_file_req_t on_put_file_req,
@@ -663,6 +681,10 @@ int bunga_server_init(
 
     int i;
     int res;
+
+    if (on_connect_req == NULL) {
+        on_connect_req = on_connect_req_default;
+    }
 
     if (on_execute_command_req == NULL) {
         on_execute_command_req = on_execute_command_req_default;
@@ -697,6 +719,7 @@ int bunga_server_init(
         return (res);
     }
 
+    self_p->on_connect_req = on_connect_req;
     self_p->on_execute_command_req = on_execute_command_req;
     self_p->on_get_file_req = on_get_file_req;
     self_p->on_put_file_req = on_put_file_req;
@@ -908,6 +931,15 @@ void bunga_server_disconnect(
     }
 
     client_pending_disconnect(client_p, self_p);
+}
+
+struct bunga_connect_rsp_t *bunga_server_init_connect_rsp(
+    struct bunga_server_t *self_p)
+{
+    bunga_server_new_output_message(self_p);
+    bunga_server_to_client_messages_connect_rsp_init(self_p->output.message_p);
+
+    return (&self_p->output.message_p->messages.value.connect_rsp);
 }
 
 struct bunga_execute_command_rsp_t *bunga_server_init_execute_command_rsp(
