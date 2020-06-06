@@ -96,10 +96,12 @@ static void client_destroy(struct client_t *self_p)
 
     if (self_p->fget_p != NULL) {
         fclose(self_p->fget_p);
+        self_p->fget_p = NULL;
     }
 
     if (self_p->fput_p != NULL) {
         fclose(self_p->fput_p);
+        self_p->fput_p = NULL;
     }
 }
 
@@ -213,11 +215,11 @@ static void on_put_file_req(struct bunga_server_t *self_p,
 
             if (items_written != 1) {
                 response_p->error_p = "Write failed.";
+                fclose(client_p->fput_p);
                 client_p->fput_p = NULL;
             }
         } else {
             response_p->error_p = "No file open.";
-            client_p->fput_p = NULL;
         }
     } else if (client_p->fput_p != NULL) {
         fclose(client_p->fput_p);
