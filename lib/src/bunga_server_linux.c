@@ -53,31 +53,57 @@ struct execute_command_t {
     struct ml_queue_t *queue_p;
 };
 
-struct log_client_t {
+struct client_t {
     struct bunga_server_client_t *client_p;
     int log_fd;
+    FILE *fput_p;
+    FILE *fget_p;
 };
 
-static struct bunga_server_client_t clients[2];
-static struct log_client_t log_clients[2];
+static struct bunga_server_client_t bunga_clients[2];
+static struct client_t clients[2];
 static struct ml_queue_t queue;
 static int epoll_fd;
 
 static ML_UID(uid_execute_command_complete);
 
-static struct log_client_t *log_client_from_client(
+static struct client_t *client_from_bunga_client(
     struct bunga_server_client_t *client_p)
 {
-    return (&log_clients[client_p - &clients[0]]);
+    return (&clients[client_p - &bunga_clients[0]]);
 }
 
-static struct bunga_server_client_t *log_client_to_client(
-    struct log_client_t *client_p)
+static struct bunga_server_client_t *client_to_bunga_client(
+    struct client_t *client_p)
 {
-    return (&clients[client_p - &log_clients[0]]);
+    return (&bunga_clients[client_p - &clients[0]]);
 }
 
-static void log_client_init(struct log_client_t *self_p)
+static void client_init(struct client_t *self_p)
+{
+    self_p->log_fd = -1;
+    self_p->fget_p = NULL;
+    self_p->fput_p = NULL;
+}
+
+static void client_destroy(struct client_t *self_p)
+{
+    if (self_p->log_fd != -1) {
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, self_p->log_fd, NULL);
+        close(self_p->log_fd);
+        self_p->log_fd = -1;
+    }
+
+    if (self_p->fget_p != NULL) {
+        fclose(self_p->fget_p);
+    }
+
+    if (self_p->fput_p != NULL) {
+        fclose(self_p->fput_p);
+    }
+}
+
+static void client_on_connected(struct client_t *self_p)
 {
     struct epoll_event event;
 
@@ -90,13 +116,6 @@ static void log_client_init(struct log_client_t *self_p)
     }
 }
 
-static void log_client_destroy(struct log_client_t *self_p)
-{
-    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, self_p->log_fd, NULL);
-    close(self_p->log_fd);
-    self_p->log_fd = -1;
-}
-
 static void on_client_connected(struct bunga_server_t *self_p,
                                 struct bunga_server_client_t *client_p)
 {
@@ -104,7 +123,7 @@ static void on_client_connected(struct bunga_server_t *self_p,
 
     printf("Bunga client connected.\n");
 
-    log_client_init(log_client_from_client(client_p));
+    client_on_connected(client_from_bunga_client(client_p));
 }
 
 static void on_client_disconnected(struct bunga_server_t *self_p,
@@ -114,7 +133,7 @@ static void on_client_disconnected(struct bunga_server_t *self_p,
 
     printf("Bunga client disconnected.\n");
 
-    log_client_destroy(log_client_from_client(client_p));
+    client_destroy(client_from_bunga_client(client_p));
 }
 
 static void execute_command_job(struct execute_command_t *command_p)
@@ -163,17 +182,48 @@ static void on_get_file_req(struct bunga_server_t *self_p,
 }
 
 static void on_put_file_req(struct bunga_server_t *self_p,
-                            struct bunga_server_client_t *client_p,
+                            struct bunga_server_client_t *bunga_client_p,
                             struct bunga_put_file_req_t *request_p)
 {
-    (void)client_p;
-    (void)request_p;
+    struct bunga_put_file_rsp_t *response_p;
+    struct client_t *client_p;
+    size_t items_written;
 
-    //struct bunga_put_file_rsp_t *response_p;
+    client_p = client_from_bunga_client(bunga_client_p);
 
-    bunga_server_init_put_file_rsp(self_p);
-    printf("size: %ld\n", request_p->size);
-    //response_p->error_p = strerror(ENOSYS);
+    response_p = bunga_server_init_put_file_rsp(self_p);
+
+    if (strlen(request_p->path_p) > 0) {
+        if (client_p->fput_p != NULL) {
+            fclose(client_p->fput_p);
+        }
+
+        response_p->window_size = 10;
+        client_p->fput_p = fopen(request_p->path_p, "wb");
+
+        if (client_p->fput_p == NULL) {
+            response_p->error_p = "Open failed.";
+        }
+    } else if (request_p->data.size > 0) {
+        if (client_p->fput_p != NULL) {
+            items_written = fwrite(request_p->data.buf_p,
+                                   request_p->data.size,
+                                   1,
+                                   client_p->fput_p);
+
+            if (items_written != 1) {
+                response_p->error_p = "Write failed.";
+                client_p->fput_p = NULL;
+            }
+        } else {
+            response_p->error_p = "No file open.";
+            client_p->fput_p = NULL;
+        }
+    } else if (client_p->fput_p != NULL) {
+        fclose(client_p->fput_p);
+        client_p->fput_p = NULL;
+    }
+
     bunga_server_reply(self_p);
 }
 
@@ -258,13 +308,13 @@ static void print_kernel_message(char *message_p,
     bunga_server_send(server_p, client_p);
 }
 
-static struct log_client_t *find_log_client(int log_fd)
+static struct client_t *find_log_client(int log_fd)
 {
     int i;
 
     for (i = 0; i < 2; i++) {
-        if (log_fd == log_clients[i].log_fd) {
-            return (&log_clients[i]);
+        if (log_fd == clients[i].log_fd) {
+            return (&clients[i]);
         }
     }
 
@@ -275,7 +325,7 @@ static bool handle_log(struct bunga_server_t *server_p, int log_fd)
 {
     char message[1024];
     ssize_t size;
-    struct log_client_t *client_p;
+    struct client_t *client_p;
 
     client_p = find_log_client(log_fd);
 
@@ -293,7 +343,7 @@ static bool handle_log(struct bunga_server_t *server_p, int log_fd)
         message[size] = '\0';
         print_kernel_message(&message[0],
                              server_p,
-                             log_client_to_client(client_p));
+                             client_to_bunga_client(client_p));
     }
 
     return (true);
@@ -359,7 +409,7 @@ static void *server_main()
 
     res = bunga_server_init(&server,
                             "tcp://:28000",
-                            &clients[0],
+                            &bunga_clients[0],
                             2,
                             &clients_input_buffers[0][0],
                             sizeof(clients_input_buffers[0]),
@@ -384,7 +434,7 @@ static void *server_main()
     }
 
     for (i = 0; i < 2; i++) {
-        log_clients[i].log_fd = -1;
+        client_init(&clients[i]);
     }
 
     res = bunga_server_start(&server);
