@@ -70,6 +70,7 @@ class Client(BungaClient):
         self._is_connected = False
 
         if self._awaiting_completion:
+            self._awaiting_completion = False
             self._error = 'Connection lost.'
             await self._complete_queue.put(None)
 
