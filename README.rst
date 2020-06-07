@@ -30,8 +30,8 @@ Stream logs from your system to your PC.
 
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/log.png
 
-The get subcommand
-------------------
+The get_file subcommand
+-----------------------
 
 Get a file from your system.
 
@@ -39,8 +39,8 @@ Get a file from your system.
 
    $ bunga get_file /root/wire.ko
 
-The put subcommand
-------------------
+The put_file subcommand
+-----------------------
 
 Put a file on your system.
 
