@@ -39,6 +39,11 @@
 #include "bunga_server.h"
 #include "ml/ml.h"
 
+/**
+ * The maximum message size to receive.
+ */
+#define MESSAGE_SIZE_MAX                    256
+
 struct execute_command_t {
     char *command_p;
     int res;
@@ -162,7 +167,11 @@ static void on_connect_req(struct bunga_server_t *self_p,
     (void)client_p;
     (void)request_p;
 
-    bunga_server_init_connect_rsp(self_p);
+    struct bunga_connect_rsp_t *response_p;
+
+    response_p = bunga_server_init_connect_rsp(self_p);
+    response_p->keep_alive_timeout = 2;
+    response_p->maximum_message_size = MESSAGE_SIZE_MAX;
     bunga_server_reply(self_p);
 }
 
@@ -194,9 +203,9 @@ static void on_get_file_req(struct bunga_server_t *self_p,
     bunga_server_reply(self_p);
 }
 
-static void put_file_begin(struct client_t *client_p,
-                           struct bunga_put_file_req_t *request_p,
-                           struct bunga_put_file_rsp_t *response_p)
+static void put_file_open(struct client_t *client_p,
+                          struct bunga_put_file_req_t *request_p,
+                          struct bunga_put_file_rsp_t *response_p)
 {
     if (client_p->fput_p != NULL) {
         fclose(client_p->fput_p);
@@ -232,7 +241,7 @@ static void put_file_data(struct client_t *client_p,
     }
 }
 
-static void put_file_end(struct client_t *client_p)
+static void put_file_close(struct client_t *client_p)
 {
     fclose(client_p->fput_p);
     client_p->fput_p = NULL;
@@ -247,13 +256,14 @@ static void on_put_file_req(struct bunga_server_t *self_p,
 
     client_p = client_from_bunga_client(bunga_client_p);
     response_p = bunga_server_init_put_file_rsp(self_p);
+    response_p->acknowledge_count = 1;
 
     if (strlen(request_p->path_p) > 0) {
-        put_file_begin(client_p, request_p, response_p);
+        put_file_open(client_p, request_p, response_p);
     } else if (request_p->data.size > 0) {
         put_file_data(client_p, request_p, response_p);
     } else if (client_p->fput_p != NULL) {
-        put_file_end(client_p);
+        put_file_close(client_p);
     }
 
     bunga_server_reply(self_p);
@@ -394,10 +404,10 @@ static void on_put_signal_event(int *fd_p)
 static void *server_main()
 {
     struct bunga_server_t server;
-    uint8_t clients_input_buffers[2][256];
-    uint8_t message[256];
-    uint8_t workspace_in[256];
-    uint8_t workspace_out[256];
+    uint8_t clients_input_buffers[2][MESSAGE_SIZE_MAX];
+    uint8_t message[MESSAGE_SIZE_MAX];
+    uint8_t workspace_in[MESSAGE_SIZE_MAX + 32];
+    uint8_t workspace_out[MESSAGE_SIZE_MAX + 32];
     int put_fd;
     struct epoll_event event;
     int res;
