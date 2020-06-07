@@ -169,7 +169,7 @@ class ClientTest(unittest.TestCase):
             self.assertEqual(
                 req,
                 b'\x01\x00\x00\x15"\x13\n\x0eput_remote.txt\x10\x89\x04')
-            writer.write(b'\x02\x00\x00\x04*\x02\x08\n')
+            writer.write(b'\x02\x00\x00\x06*\x04\x08\n\x18\x01')
 
             # Data.
             req = await reader.readexactly(210)
@@ -198,14 +198,14 @@ class ClientTest(unittest.TestCase):
                 b'456789012345678901234567890123456789012345678901234567890123456789'
                 b'01234567890\n')
 
-            writer.write(b'\x02\x00\x00\x02*\x00')
-            writer.write(b'\x02\x00\x00\x02*\x00')
-            writer.write(b'\x02\x00\x00\x02*\x00')
+            writer.write(b'\x02\x00\x00\x04*\x02\x18\x01')
+            writer.write(b'\x02\x00\x00\x04*\x02\x18\x01')
+            writer.write(b'\x02\x00\x00\x04*\x02\x18\x01')
 
             # Finalize.
             req = await reader.readexactly(6)
             self.assertEqual(req, b'\x01\x00\x00\x02"\x00')
-            writer.write(b'\x02\x00\x00\x02*\x00')
+            writer.write(b'\x02\x00\x00\x04*\x02\x18\x01')
             writer.close()
 
         listener = await asyncio.start_server(on_client_connected, 'localhost', 0)

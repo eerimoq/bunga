@@ -164,33 +164,24 @@ class Client(BungaClient):
 
         return response.window_size
 
-    async def _put_file_fill_window(self, fin, window_size):
+    async def _put_file_keep_window_full(self, fin, window_size):
         outstanding_requests = 0
 
-        while window_size > 0:
-            message = self.init_put_file_req()
-            message.data = fin.read(200)
+        while True:
+            while outstanding_requests < window_size:
+                message = self.init_put_file_req()
+                message.data = fin.read(200)
 
-            if not message.data:
-                break
+                if message.data:
+                    outstanding_requests += 1
+                    self.send()
+                elif outstanding_requests > 0:
+                    break
+                else:
+                    return
 
-            self.send()
-            outstanding_requests += 1
-            window_size -= 1
-
-        return outstanding_requests
-
-    async def _put_file_keep_window_full(self, fin, outstanding_requests):
-        while outstanding_requests > 0:
-            await self._wait_for_completion()
-
-            message = self.init_put_file_req()
-            message.data = fin.read(200)
-
-            if message.data:
-                self.send()
-            else:
-                outstanding_requests -= 1
+            response = await self._wait_for_completion()
+            outstanding_requests -= response.acknowledge_count
 
     async def _put_file_finalize(self, fin):
         self.init_put_file_req()
@@ -203,8 +194,7 @@ class Client(BungaClient):
         self._awaiting_completion = True
 
         window_size = await self._put_file_setup(remote_path, size)
-        outstanding_requests = await self._put_file_fill_window(fin, window_size)
-        await self._put_file_keep_window_full(fin, outstanding_requests)
+        await self._put_file_keep_window_full(fin, window_size)
         await self._put_file_finalize(fin)
 
 
