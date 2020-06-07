@@ -24,13 +24,13 @@ RE_COMMAND = re.compile(r'^\s*(\S+)', re.MULTILINE)
 
 class ShellClient(Client):
 
-    async def on_connected(self):
-        await super().on_connected()
-        print_info('Connected')
-
     async def on_disconnected(self):
         await super().on_disconnected()
         print_info('Disconnected')
+
+    async def on_connect_rsp(self, message):
+        await super().on_connect_rsp(message)
+        print_info('Connected')
 
 
 def is_comment(line):

@@ -40,11 +40,17 @@ class Client(bunga.Client):
 
 class ClientTest(unittest.TestCase):
 
+    async def connect_req_rsp(self, reader, writer):
+        connect_req = await reader.readexactly(6)
+        self.assertEqual(connect_req, b'\x01\x00\x00\x02\n\x00')
+        writer.write(b'\x02\x00\x00\x07\n\x05\x08\x02\x10\xd8\x01')
+
     def test_execute_command(self):
         asyncio.run(self.execute_command())
 
     async def execute_command(self):
         async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
             date_req = await reader.readexactly(12)
             self.assertEqual(date_req, b'\x01\x00\x00\x08\x12\x06\n\x04date')
             writer.write(b'\x02\x00\x00\x08\x12\x06\n\x042020')
@@ -82,6 +88,7 @@ class ClientTest(unittest.TestCase):
 
     async def execute_command_disconnect_and_no_response(self):
         async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
             date_req = await reader.readexactly(12)
             self.assertEqual(date_req, b'\x01\x00\x00\x08\x12\x06\n\x04date')
             writer.close()
@@ -109,6 +116,7 @@ class ClientTest(unittest.TestCase):
 
     async def log_entry(self):
         async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
             writer.write(b'\x02\x00\x00\x0f\x1a\r\n\x03123\n\x06Hello!')
             writer.write(b'\x02\x00\x00\x15\x1a\x13\n\x03123\n\x06Hello!\n\x04 Hi!')
             writer.close()
@@ -133,6 +141,7 @@ class ClientTest(unittest.TestCase):
 
     async def get_file(self):
         async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
             req = await reader.readexactly(13)
             self.assertEqual(req, b'\x01\x00\x00\x09\x1a\x07\n\x05/init')
             writer.write(b'\x02\x00\x00\x0a"\x08\x08\x08\x12\x041234')
@@ -163,6 +172,8 @@ class ClientTest(unittest.TestCase):
 
     async def put_file(self):
         async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
+
             # Setup.
             req = await reader.readexactly(25)
             self.assertEqual(len(req), 25)

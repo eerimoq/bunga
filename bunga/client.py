@@ -56,13 +56,16 @@ class Client(BungaClient):
         self._connect_exception = None
         self._connection_refused_delay = connection_refused_delay
         self._connect_timeout_delay = connect_timeout_delay
+        self._maximum_message_size = 64
 
     async def on_connected(self):
-        self._is_connected = True
-        self._connect_exception = None
-        self._connected_event.set()
+        self.init_connect_req()
+        self.send()
 
     async def on_disconnected(self):
+        if not self._is_connected:
+            await asyncio.sleep(1)
+
         self._connected_event.clear()
         self._is_connected = False
 
@@ -95,6 +98,15 @@ class Client(BungaClient):
             raise Exception(self._error)
 
         return self._response
+
+    async def on_connect_rsp(self, message):
+        # ToDo: Use received keep alive timeout.
+        if message.maximum_message_size > 64:
+            self._maximum_message_size = message.maximum_message_size
+
+        self._is_connected = True
+        self._connect_exception = None
+        self._connected_event.set()
 
     async def on_execute_command_rsp(self, message):
         if message.output:
@@ -154,7 +166,7 @@ class Client(BungaClient):
         if self._error:
             raise Exception(self._error)
 
-    async def _put_file_setup(self, remote_path, size):
+    async def _put_file_open(self, remote_path, size):
         message = self.init_put_file_req()
         message.path = remote_path
         message.size = size
@@ -170,7 +182,7 @@ class Client(BungaClient):
         while True:
             while outstanding_requests < window_size:
                 message = self.init_put_file_req()
-                message.data = fin.read(200)
+                message.data = fin.read(self._maximum_message_size - 16)
 
                 if message.data:
                     outstanding_requests += 1
@@ -183,7 +195,7 @@ class Client(BungaClient):
             response = await self._wait_for_completion()
             outstanding_requests -= response.acknowledge_count
 
-    async def _put_file_finalize(self, fin):
+    async def _put_file_close(self, fin):
         self.init_put_file_req()
         self.send()
 
@@ -193,9 +205,9 @@ class Client(BungaClient):
         await self.wait_for_connection()
         self._awaiting_completion = True
 
-        window_size = await self._put_file_setup(remote_path, size)
+        window_size = await self._put_file_open(remote_path, size)
         await self._put_file_keep_window_full(fin, window_size)
-        await self._put_file_finalize(fin)
+        await self._put_file_close(fin)
 
 
 def print_info(text):

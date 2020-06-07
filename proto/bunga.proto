@@ -24,14 +24,16 @@ message ServerToClient {
 message ConnectReq {
     // Requested keep alive timeout in seconds.
     uint32 keep_alive_timeout = 1;
-    // Maximum message size in bytes the client can receive.
+    // Maximum message size in bytes the client can receive. Zero
+    // means no limit. Must be at least 64 bytes.
     uint32 maximum_message_size = 2;
 }
 
 message ConnectRsp {
     // Final keep alive timeout in seconds.
     uint32 keep_alive_timeout = 1;
-    // Maximum message size in bytes the server can receive.
+    // Maximum message size in bytes the server can receive. Zero
+    // means no limit. Must be at least 64 bytes.
     uint32 maximum_message_size = 2;
 }
 

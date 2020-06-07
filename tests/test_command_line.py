@@ -13,7 +13,13 @@ from .utils import start_server
 
 class CommandLineTest(unittest.TestCase):
 
+    def connect_req_rsp(self, client):
+        connect_req = client.recv(6)
+        self.assertEqual(connect_req, b'\x01\x00\x00\x02\n\x00')
+        client.sendall(b'\x02\x00\x00\x07\n\x05\x08\x02\x10\xd8\x01')
+
     def shell_handler(self, client):
+        self.connect_req_rsp(client)
         req = client.recv(10)
         self.assertEqual(req, b'\x01\x00\x00\x06\x12\x04\n\x02ko')
         client.sendall(b'\x02\x00\x00\x0d\x12\x0b\x12\tNot found')
@@ -45,6 +51,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def get_file_handler(self, client):
+        self.connect_req_rsp(client)
         req = client.recv(21)
         self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
         client.sendall(b'\x02\x00\x00\x0f"\r\x08\t\x12\t12345678\n')
@@ -72,6 +79,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def get_file_error_handler(self, client):
+        self.connect_req_rsp(client)
         req = client.recv(21)
         self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
         client.sendall(b'\x02\x00\x00\x0d"\x0b\x1a\tNot found')
@@ -95,6 +103,8 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def put_file_handler(self, client):
+        self.connect_req_rsp(client)
+
         # Setup.
         req = client.recv(18)
         self.assertEqual(len(req), 18)
@@ -153,6 +163,8 @@ class CommandLineTest(unittest.TestCase):
         self.assertIsNone(server.exception)
 
     def put_file_error_handler(self, client):
+        self.connect_req_rsp(client)
+
         # Setup.
         req = client.recv(18)
         self.assertEqual(len(req), 18)
