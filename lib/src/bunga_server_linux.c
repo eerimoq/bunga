@@ -42,7 +42,16 @@
 /**
  * The maximum message size to receive.
  */
-#define MESSAGE_SIZE_MAX                    256
+#ifndef BUNGA_MESSAGE_SIZE_MAX
+#    define BUNGA_MESSAGE_SIZE_MAX                    512
+#endif
+
+/**
+ * Put file window size.
+ */
+#ifndef BUNGA_PUT_FILE_WINDOW_SIZE
+#    define BUNGA_PUT_FILE_WINDOW_SIZE                100
+#endif
 
 struct execute_command_t {
     char *command_p;
@@ -171,7 +180,7 @@ static void on_connect_req(struct bunga_server_t *self_p,
 
     response_p = bunga_server_init_connect_rsp(self_p);
     response_p->keep_alive_timeout = 2;
-    response_p->maximum_message_size = MESSAGE_SIZE_MAX;
+    response_p->maximum_message_size = BUNGA_MESSAGE_SIZE_MAX;
     bunga_server_reply(self_p);
 }
 
@@ -211,7 +220,7 @@ static void put_file_open(struct client_t *client_p,
         fclose(client_p->fput_p);
     }
 
-    response_p->window_size = 10;
+    response_p->window_size = BUNGA_PUT_FILE_WINDOW_SIZE;
     client_p->fput_p = fopen(request_p->path_p, "wb");
 
     if (client_p->fput_p == NULL) {
@@ -404,10 +413,10 @@ static void on_put_signal_event(int *fd_p)
 static void *server_main()
 {
     struct bunga_server_t server;
-    uint8_t clients_input_buffers[2][MESSAGE_SIZE_MAX];
-    uint8_t message[MESSAGE_SIZE_MAX];
-    uint8_t workspace_in[MESSAGE_SIZE_MAX + 32];
-    uint8_t workspace_out[MESSAGE_SIZE_MAX + 32];
+    uint8_t clients_input_buffers[2][BUNGA_MESSAGE_SIZE_MAX];
+    uint8_t message[BUNGA_MESSAGE_SIZE_MAX];
+    uint8_t workspace_in[BUNGA_MESSAGE_SIZE_MAX + 64];
+    uint8_t workspace_out[BUNGA_MESSAGE_SIZE_MAX + 64];
     int put_fd;
     struct epoll_event event;
     int res;
