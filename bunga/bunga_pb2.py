@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='bunga',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xd5\x01\n\x0e\x43lientToServer\x12(\n\x0b\x63onnect_req\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectReqH\x00\x12\x37\n\x13\x65xecute_command_req\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\x82\x02\n\x0eServerToClient\x12(\n\x0b\x63onnect_rsp\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectRspH\x00\x12\x37\n\x13\x65xecute_command_rsp\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x03 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x05 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"F\n\nConnectReq\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"F\n\nConnectRsp\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"/\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0bwindow_size\x18\x02 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"0\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x0b\x62unga.proto\x12\x05\x62unga\"\xd5\x01\n\x0e\x43lientToServer\x12(\n\x0b\x63onnect_req\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectReqH\x00\x12\x37\n\x13\x65xecute_command_req\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandReqH\x00\x12)\n\x0cget_file_req\x18\x03 \x01(\x0b\x32\x11.bunga.GetFileReqH\x00\x12)\n\x0cput_file_req\x18\x04 \x01(\x0b\x32\x11.bunga.PutFileReqH\x00\x42\n\n\x08messages\"\x82\x02\n\x0eServerToClient\x12(\n\x0b\x63onnect_rsp\x18\x01 \x01(\x0b\x32\x11.bunga.ConnectRspH\x00\x12\x37\n\x13\x65xecute_command_rsp\x18\x02 \x01(\x0b\x32\x18.bunga.ExecuteCommandRspH\x00\x12+\n\rlog_entry_ind\x18\x03 \x01(\x0b\x32\x12.bunga.LogEntryIndH\x00\x12)\n\x0cget_file_rsp\x18\x04 \x01(\x0b\x32\x11.bunga.GetFileRspH\x00\x12)\n\x0cput_file_rsp\x18\x05 \x01(\x0b\x32\x11.bunga.PutFileRspH\x00\x42\n\n\x08messages\"F\n\nConnectReq\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"F\n\nConnectRsp\x12\x1a\n\x12keep_alive_timeout\x18\x01 \x01(\r\x12\x1c\n\x14maximum_message_size\x18\x02 \x01(\r\"$\n\x11\x45xecuteCommandReq\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\"2\n\x11\x45xecuteCommandRsp\x12\x0e\n\x06output\x18\x01 \x01(\x0c\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"\x1b\n\x0bLogEntryInd\x12\x0c\n\x04text\x18\x01 \x03(\t\"J\n\nGetFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0bwindow_size\x18\x02 \x01(\r\x12\x19\n\x11\x61\x63knowledge_count\x18\x03 \x01(\r\"7\n\nGetFileRsp\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"6\n\nPutFileReq\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\"K\n\nPutFileRsp\x12\x13\n\x0bwindow_size\x18\x01 \x01(\r\x12\r\n\x05\x65rror\x18\x02 \x01(\t\x12\x19\n\x11\x61\x63knowledge_count\x18\x03 \x01(\rb\x06proto3')
 )
 
 
@@ -340,6 +340,13 @@ _GETFILEREQ = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='acknowledge_count', full_name='bunga.GetFileReq.acknowledge_count', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -353,7 +360,7 @@ _GETFILEREQ = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=762,
-  serialized_end=809,
+  serialized_end=836,
 )
 
 
@@ -397,8 +404,8 @@ _GETFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=811,
-  serialized_end=866,
+  serialized_start=838,
+  serialized_end=893,
 )
 
 
@@ -442,8 +449,8 @@ _PUTFILEREQ = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=868,
-  serialized_end=922,
+  serialized_start=895,
+  serialized_end=949,
 )
 
 
@@ -468,6 +475,13 @@ _PUTFILERSP = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='acknowledge_count', full_name='bunga.PutFileRsp.acknowledge_count', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -480,8 +494,8 @@ _PUTFILERSP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=924,
-  serialized_end=972,
+  serialized_start=951,
+  serialized_end=1026,
 )
 
 _CLIENTTOSERVER.fields_by_name['connect_req'].message_type = _CONNECTREQ

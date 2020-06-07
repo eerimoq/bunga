@@ -76,6 +76,7 @@ struct bunga_get_file_req_t {
     struct pbtools_message_base_t base;
     char *path_p;
     uint32_t window_size;
+    uint32_t acknowledge_count;
 };
 
 /**
@@ -198,6 +199,7 @@ struct bunga_put_file_rsp_t {
     struct pbtools_message_base_t base;
     uint32_t window_size;
     char *error_p;
+    uint32_t acknowledge_count;
 };
 
 /**

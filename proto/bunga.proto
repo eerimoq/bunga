@@ -59,6 +59,8 @@ message GetFileReq {
     // The maximum number of response messages in flight to the
     // client. Only present in the first message.
     uint32 window_size = 2;
+    // Number of received responses this request acknowledges.
+    uint32 acknowledge_count = 3;
 }
 
 message GetFileRsp {
@@ -88,4 +90,6 @@ message PutFileRsp {
     // An error occurred if this is not the empty string. Only present
     // in the last message.
     string error = 2;
+    // Number of received requests this response acknowledges.
+    uint32 acknowledge_count = 3;
 }
