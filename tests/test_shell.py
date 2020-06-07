@@ -40,8 +40,12 @@ class ShellTest(unittest.TestCase):
             '# A comment',
             'exit'
         ]
+        client = Client()
+        client.execute_command.side_effect = [
+            b'\nCommands\n'
+        ]
 
-        shell.shell_main(Client())
+        shell.shell_main(client)
 
     @patch('prompt_toolkit.prompt')
     def test_execute_command_netstat(self, prompt):
@@ -51,6 +55,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             b'   0: 00000000:6D60 00000000:0000 0A 00000000:00000000 00:00000000 '
             b'00000000     0        0 2006 1 eee68000 100 0 0 10 0\n'
         ]
@@ -60,7 +65,10 @@ class ShellTest(unittest.TestCase):
             shell.shell_main(client)
 
         self.assertEqual(client.execute_command.call_args_list,
-                         [call('cat /proc/net/tcp')])
+                         [
+                             call('help'),
+                             call('cat /proc/net/tcp')
+                         ])
         self.assertIn(
             'PROTO  LOCAL-ADDRESS          REMOTE-ADDRESS         STATE\n'
             '----------------------------------------------------------------\n'
@@ -75,6 +83,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             b'19747.42 19696.08\n',
             b'0.49 0.45 0.46 3/35 102\n'
         ]
@@ -85,6 +94,7 @@ class ShellTest(unittest.TestCase):
 
         self.assertEqual(client.execute_command.call_args_list,
                          [
+                             call('help'),
                              call('cat /proc/uptime'),
                              call('cat /proc/loadavg')
                          ])
@@ -101,6 +111,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             b'36 49',
             b'36 (ml_worker_pool) S 0 0 0 0 -1 1077936192 2080 0 0 0 334 24 0 0 '
             b'20 0 9 0 29 5316608 930 4294967295 65536 923972 3196878608 0 0 0 0 '
@@ -119,6 +130,7 @@ class ShellTest(unittest.TestCase):
 
         self.assertEqual(client.execute_command.call_args_list,
                          [
+                             call('help'),
                              call('ls /proc/1/task'),
                              call('cat /proc/1/task/36/stat'),
                              call('cat /proc/1/task/49/stat'),
@@ -140,6 +152,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             b'[    3.715374] random: fast init done'
         ]
         stdout = StringIO()
@@ -149,6 +162,7 @@ class ShellTest(unittest.TestCase):
 
         self.assertEqual(client.execute_command.call_args_list,
                          [
+                             call('help'),
                              call('dmesg')
                          ])
         self.assertIn('\x1b[32m[    3.715374]\x1b[0m random: fast init done\n',
@@ -162,6 +176,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             b'2021'
         ]
         stdout = StringIO()
@@ -171,6 +186,7 @@ class ShellTest(unittest.TestCase):
 
         self.assertEqual(client.execute_command.call_args_list,
                          [
+                             call('help'),
                              call('date')
                          ])
         self.assertIn('2021', stdout.getvalue())
@@ -183,6 +199,7 @@ class ShellTest(unittest.TestCase):
         ]
         client = Client()
         client.execute_command.side_effect = [
+            b'\nCommands\n',
             bunga.ExecuteCommandError(b'', 'Bad command.')
         ]
         stdout = StringIO()
@@ -192,6 +209,29 @@ class ShellTest(unittest.TestCase):
 
         self.assertEqual(client.execute_command.call_args_list,
                          [
+                             call('help'),
                              call('bad')
                          ])
         self.assertIn('ERROR(Bad command.)', stdout.getvalue())
+
+    def test_load_commands(self):
+        client = Client()
+        client.execute_command.side_effect = [
+            b'\n'
+            b'Commands\n'
+            b'\n'
+            b'          cat   Print a file.\n'
+            b'         date   Print current date.\n'
+            b'           dd   File copy.\n'
+        ]
+
+        self.assertEqual(shell.load_commands(client),
+                         [
+                             'cat',
+                             'date',
+                             'dd',
+                             'dmesg',
+                             'netstat',
+                             'ps',
+                             'uptime'
+                         ])

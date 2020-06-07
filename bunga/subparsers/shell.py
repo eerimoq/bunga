@@ -6,6 +6,8 @@ import subprocess
 import prompt_toolkit
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.shortcuts import CompleteStyle
 
 from ..client import Client
 from ..client import ClientThread
@@ -14,6 +16,10 @@ from ..client import print_error
 from ..client import format_log_entry
 from ..client import ExecuteCommandError
 from .. import linux
+from .. import __version__
+
+
+RE_COMMAND = re.compile(r'^\s*(\S+)', re.MULTILINE)
 
 
 class ShellClient(Client):
@@ -124,19 +130,40 @@ def execute_dmesg(client):
     return '\n'.join(lines) + '\n'
 
 
+def load_commands(client):
+    commands = [
+        'netstat',
+        'uptime',
+        'ps',
+        'dmesg'
+    ]
+
+    output = execute_command(client, 'help')
+    output = output.split('\nCommands\n')[1]
+
+    for line in output.splitlines():
+        mo = RE_COMMAND.match(line)
+
+        if mo:
+            commands.append(mo.group(1))
+
+    return sorted(list(set(commands)))
+
+
 def shell_main(client):
-    commands = [command[1:] for command in []]
-    commands.append('exit')
     user_home = os.path.expanduser('~')
     history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
     ps_formatter = linux.PsFormatter()
+    commands = load_commands(client)
 
     while True:
         try:
-            line = prompt_toolkit.prompt('$ ',
+            line = prompt_toolkit.prompt('(bunga) ',
+                                         completer=WordCompleter(commands),
                                          complete_while_typing=True,
                                          auto_suggest=AutoSuggestFromHistory(),
                                          enable_history_search=True,
+                                         complete_style=CompleteStyle.READLINE_LIKE,
                                          history=history)
         except EOFError:
             break
@@ -169,6 +196,7 @@ def shell_main(client):
 
 
 def _do_shell(args):
+    print_info(f'bunga {__version__}')
     client = ClientThread(args.uri, ShellClient)
     client.start()
 
