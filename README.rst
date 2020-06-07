@@ -46,7 +46,8 @@ Put a file on your system.
 
 .. code-block:: text
 
-   $ bunga put_file config /root/config
+   $ bunga put_file README.rst
+   100%|█████████████████████████████████████| 1.19k/1.19k [00:00<00:00, 24.1kB/s]
 
 .. |buildstatus| image:: https://travis-ci.com/eerimoq/bunga.svg?branch=master
 .. _buildstatus: https://travis-ci.com/eerimoq/bunga
