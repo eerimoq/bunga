@@ -9,6 +9,7 @@ from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
 from prompt_toolkit.formatted_text import ANSI
+from prompt_toolkit.patch_stdout import patch_stdout
 
 from ..client import Client
 from ..client import ClientThread
@@ -207,7 +208,8 @@ def _do_shell(args):
     client = ClientThread(args.uri, ShellClient)
     client.start()
 
-    shell_main(client)
+    with patch_stdout():
+        shell_main(client)
 
 
 def add_subparser(subparsers):
