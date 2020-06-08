@@ -54,6 +54,13 @@
 #    define BUNGA_PUT_FILE_WINDOW_SIZE                100
 #endif
 
+/**
+ * Get file window size.
+ */
+#ifndef BUNGA_GET_FILE_WINDOW_SIZE
+#    define BUNGA_GET_FILE_WINDOW_SIZE                100
+#endif
+
 struct execute_command_t {
     char *command_p;
     int res;
@@ -73,6 +80,8 @@ struct client_t {
     int log_fd;
     FILE *fput_p;
     FILE *fget_p;
+    uint32_t outstanding_responses;
+    uint32_t window_size;
 };
 
 static struct bunga_server_client_t bunga_clients[2];
@@ -217,6 +226,26 @@ static void get_file_add_data(struct client_t *client_p,
     }
 }
 
+static void get_file_fill_window(struct bunga_server_t *self_p,
+                                 struct client_t *client_p,
+                                 uint8_t *buf_p,
+                                 size_t size)
+{
+    struct bunga_get_file_rsp_t *response_p;
+
+    while (client_p->outstanding_responses < client_p->window_size) {
+        response_p = bunga_server_init_get_file_rsp(self_p);
+        get_file_add_data(client_p, response_p, buf_p, size);
+        bunga_server_reply(self_p);
+
+        if (response_p->data.size == 0) {
+            break;
+        }
+
+        client_p->outstanding_responses++;
+    }
+}
+
 static void get_file_open(struct bunga_server_t *self_p,
                           struct client_t *client_p,
                           struct bunga_get_file_req_t *request_p)
@@ -231,13 +260,22 @@ static void get_file_open(struct bunga_server_t *self_p,
         fclose(client_p->fget_p);
     }
 
+    client_p->outstanding_responses = 0;
     client_p->fget_p = fopen(request_p->path_p, "rb");
 
     if (client_p->fget_p != NULL) {
         if (stat(request_p->path_p, &statbuf) == 0) {
+            client_p->window_size = request_p->window_size;
+
+            if (client_p->window_size == 0) {
+                client_p->window_size = BUNGA_GET_FILE_WINDOW_SIZE;
+            }
+
             response_p->size = statbuf.st_size;
             get_file_add_data(client_p, response_p, &buf[0], sizeof(buf));
         } else {
+            fclose(client_p->fget_p);
+            client_p->fget_p = NULL;
             response_p->error_p = strerror(errno);
         }
     } else {
@@ -245,18 +283,22 @@ static void get_file_open(struct bunga_server_t *self_p,
     }
 
     bunga_server_reply(self_p);
+
+    if (response_p->data.size > 0) {
+        client_p->outstanding_responses++;
+        get_file_fill_window(self_p, client_p, &buf[0], sizeof(buf));
+    }
 }
 
 static void get_file_data(struct bunga_server_t *self_p,
                           struct client_t *client_p,
                           struct bunga_get_file_req_t *request_p)
 {
-    struct bunga_get_file_rsp_t *response_p;
     uint8_t buf[BUNGA_MESSAGE_SIZE_MAX - 64];
 
-    response_p = bunga_server_init_get_file_rsp(self_p);
-    get_file_add_data(client_p, response_p, &buf[0], sizeof(buf));
-    bunga_server_reply(self_p);
+    client_p->outstanding_responses -= request_p->acknowledge_count;
+
+    get_file_fill_window(self_p, client_p, &buf[0], sizeof(buf));
 }
 
 static void on_get_file_req(struct bunga_server_t *self_p,
