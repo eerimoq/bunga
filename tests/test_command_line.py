@@ -51,57 +51,67 @@ class CommandLineTest(unittest.TestCase):
         server.join()
         self.assertIsNone(server.exception)
 
-#     def get_file_handler(self, client):
-#         self.connect_req_rsp(client)
-#         req = client.recv(21)
-#         self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
-#         client.sendall(b'\x02\x00\x00\x0f"\r\x08\t\x12\t12345678\n')
-#         client.sendall(b'\x02\x00\x00\x02"\x00')
-#         client.close()
-# 
-#     def test_get_file(self):
-#         server, port = start_server(self.get_file_handler)
-#         argv = [
-#             'bunga', 'get_file',
-#             '--uri', f'tcp://localhost:{port}',
-#             'tests/put.txt'
-#         ]
-# 
-#         if os.path.exists('put.txt'):
-#             os.remove('put.txt')
-# 
-#         with patch('sys.argv', argv):
-#             bunga.main()
-# 
-#         with open('put.txt') as fin:
-#             self.assertEqual(fin.read(), '12345678\n')
-# 
-#         server.join()
-#         self.assertIsNone(server.exception)
-# 
-#     def get_file_error_handler(self, client):
-#         self.connect_req_rsp(client)
-#         req = client.recv(21)
-#         self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
-#         client.sendall(b'\x02\x00\x00\x0d"\x0b\x1a\tNot found')
-#         client.close()
-# 
-#     def test_get_file_error(self):
-#         server, port = start_server(self.get_file_error_handler)
-#         argv = [
-#             'bunga', '-d', 'get_file',
-#             '--uri', f'tcp://localhost:{port}',
-#             'tests/put.txt'
-#         ]
-# 
-#         with patch('sys.argv', argv):
-#             with self.assertRaises(Exception) as cm:
-#                 bunga.main()
-# 
-#             self.assertEqual(str(cm.exception), 'Not found')
-# 
-#         server.join()
-#         self.assertIsNone(server.exception)
+    def get_file_handler(self, client):
+        self.connect_req_rsp(client)
+
+        # Open.
+        req = client.recv(21)
+        self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
+        client.sendall(b'\x02\x00\x00\x04"\x02\x08\x09')
+
+        # Data.
+        client.sendall(b'\x02\x00\x00\x0f"\r\x08\t\x12\t12345678\n')
+
+        # Close.
+        req = client.recv(8)
+        self.assertEqual(req, b'\x01\x00\x00\x04\x1a\x02\x18\x01')
+        client.sendall(b'\x02\x00\x00\x02"\x00')
+
+        client.close()
+
+    def test_get_file(self):
+        server, port = start_server(self.get_file_handler)
+        argv = [
+            'bunga', 'get_file',
+            '--uri', f'tcp://localhost:{port}',
+            'tests/put.txt'
+        ]
+
+        if os.path.exists('put.txt'):
+            os.remove('put.txt')
+
+        with patch('sys.argv', argv):
+            bunga.main()
+
+        with open('put.txt') as fin:
+            self.assertEqual(fin.read(), '12345678\n')
+
+        server.join()
+        self.assertIsNone(server.exception)
+
+    def get_file_error_handler(self, client):
+        self.connect_req_rsp(client)
+        req = client.recv(21)
+        self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
+        client.sendall(b'\x02\x00\x00\x0d"\x0b\x1a\tNot found')
+        client.close()
+
+    def test_get_file_error(self):
+        server, port = start_server(self.get_file_error_handler)
+        argv = [
+            'bunga', '-d', 'get_file',
+            '--uri', f'tcp://localhost:{port}',
+            'tests/put.txt'
+        ]
+
+        with patch('sys.argv', argv):
+            with self.assertRaises(Exception) as cm:
+                bunga.main()
+
+            self.assertEqual(str(cm.exception), 'Not found')
+
+        server.join()
+        self.assertIsNone(server.exception)
 
     def put_file_handler(self, client):
         self.connect_req_rsp(client)

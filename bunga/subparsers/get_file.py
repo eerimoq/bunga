@@ -1,5 +1,19 @@
+from tqdm.auto import tqdm
+
 from ..client import ClientThread
 from ..client import create_to_path
+
+
+class ProgressBar:
+
+    def __init__(self):
+        self._tqdm = None
+
+    def init(self, total):
+        self._tqdm = tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024)
+
+    def update(self, size):
+        self._tqdm.update(size)
 
 
 def _do_get_file(args):
@@ -9,7 +23,7 @@ def _do_get_file(args):
     client.start()
     client.wait_for_connection()
     localfile = create_to_path(args.remotefile, args.localfile)
-    client.get_file(args.remotefile, localfile)
+    client.get_file(args.remotefile, localfile, progress=ProgressBar())
 
 
 def add_subparser(subparsers):

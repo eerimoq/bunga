@@ -40,6 +40,15 @@ class ExecuteCommandError(Exception):
         self.error = error
 
 
+class Progress:
+
+    def init(self, size):
+        pass
+
+    def update(self, size):
+        pass
+
+
 def is_error(text):
     return RE_ERROR.search(text)
 
@@ -59,7 +68,9 @@ class Client(BungaClient):
         self._is_connected = False
         self._connected_event = asyncio.Event(loop=loop)
         self._complete_queue = asyncio.Queue(loop=loop)
-        self._fout = None
+        self._fget = None
+        self._get_file_size = None
+        self._get_progress = None
         self._command_output = []
         self._connect_exception = None
         self._connection_refused_delay = connection_refused_delay
@@ -132,11 +143,35 @@ class Client(BungaClient):
     async def on_log_entry_ind(self, message):
         pass
 
-    async def on_get_file_rsp(self, message):
-        if message.data:
-            self._fout.write(message.data)
+    async def _on_get_file_rsp_open(self, message):
+        if message.size > 0:
+            self._get_file_size = message.size
+            self._get_progress.init(message.size)
         else:
+            self._fget = None
             await self._write_completed(message)
+
+    async def _on_get_file_rsp_data(self, message):
+        self._fget.write(message.data)
+        self._get_progress.update(len(message.data))
+        message = self.init_get_file_req()
+        message.acknowledge_count = 1
+        self.send()
+
+    async def _on_get_file_rsp_close(self, message):
+        self._fget = None
+        await self._write_completed(message)
+
+    async def on_get_file_rsp(self, message):
+        if self._fget is None:
+            return
+
+        if self._get_file_size is None:
+            await self._on_get_file_rsp_open(message)
+        elif message.data:
+            await self._on_get_file_rsp_data(message)
+        else:
+            await self._on_get_file_rsp_close(message)
 
     async def on_put_file_rsp(self, message):
         await self._write_completed(message)
@@ -166,13 +201,17 @@ class Client(BungaClient):
 
         return b''.join(self._command_output)
 
-    async def get_file(self, remote_path, local_path):
-        with open(local_path, 'wb') as self._fout:
+    async def get_file(self, remote_path, local_path, progress=None):
+        if progress is None:
+            progress = Progress()
+
+        with open(local_path, 'wb') as self._fget:
+            self._get_file_size = None
+            self._get_progress = progress
             message = self.init_get_file_req()
             message.path = remote_path
             self.send()
-
-        await self._complete_queue.get()
+            await self._wait_for_completion()
 
     async def _put_file_open(self, remote_path, size):
         message = self.init_put_file_req()
@@ -274,9 +313,9 @@ class ClientThread(threading.Thread):
             self._client.execute_command(command),
             self._loop).result()
 
-    def get_file(self, remote_path, local_path):
+    def get_file(self, remote_path, local_path, progress=None):
         return asyncio.run_coroutine_threadsafe(
-            self._client.get_file(remote_path, local_path),
+            self._client.get_file(remote_path, local_path, progress),
             self._loop).result()
 
     def put_file(self, fin, size, remote_path):

@@ -140,35 +140,46 @@ class ClientTest(unittest.TestCase):
         await asyncio.wait_for(
             asyncio.gather(server_main(listener), client_main()), 2)
 
-#     def test_get_file(self):
-#         asyncio.run(self.get_file())
-#
-#     async def get_file(self):
-#         async def on_client_connected(reader, writer):
-#             await self.connect_req_rsp(reader, writer)
-#             req = await reader.readexactly(13)
-#             self.assertEqual(req, b'\x01\x00\x00\x09\x1a\x07\n\x05/init')
-#             writer.write(b'\x02\x00\x00\x0a"\x08\x08\x08\x12\x041234')
-#             writer.write(b'\x02\x00\x00\x08"\x06\x12\x045678')
-#             writer.write(b'\x02\x00\x00\x02"\x00')
-#
-#             writer.close()
-#
-#         listener = await asyncio.start_server(on_client_connected, 'localhost', 0)
-#
-#         async def client_main():
-#             client = await self.start_client(listener)
-#
-#             await client.get_file('/init', 'get.txt')
-#
-#             with open('get.txt', 'rb') as fin:
-#                 self.assertEqual(fin.read(), b'12345678')
-#
-#             client.stop()
-#             listener.close()
-#
-#         await asyncio.wait_for(
-#             asyncio.gather(server_main(listener), client_main()), 2)
+    def test_get_file(self):
+        asyncio.run(self.get_file())
+
+    async def get_file(self):
+        async def on_client_connected(reader, writer):
+            await self.connect_req_rsp(reader, writer)
+
+            # Open.
+            req = await reader.readexactly(13)
+            self.assertEqual(req, b'\x01\x00\x00\x09\x1a\x07\n\x05/init')
+            writer.write(b'\x02\x00\x00\x04"\x02\x08\x08')
+
+            # Data.
+            writer.write(b'\x02\x00\x00\x08"\x06\x12\x041234')
+            req = await reader.readexactly(8)
+            self.assertEqual(req, b'\x01\x00\x00\x04\x1a\x02\x18\x01')
+            writer.write(b'\x02\x00\x00\x08"\x06\x12\x045678')
+
+            # Close.
+            req = await reader.readexactly(8)
+            self.assertEqual(req, b'\x01\x00\x00\x04\x1a\x02\x18\x01')
+            writer.write(b'\x02\x00\x00\x02"\x00')
+
+            writer.close()
+
+        listener = await asyncio.start_server(on_client_connected, 'localhost', 0)
+
+        async def client_main():
+            client = await self.start_client(listener)
+
+            await client.get_file('/init', 'get.txt')
+
+            with open('get.txt', 'rb') as fin:
+                self.assertEqual(fin.read(), b'12345678')
+
+            client.stop()
+            listener.close()
+
+        await asyncio.wait_for(
+            asyncio.gather(server_main(listener), client_main()), 2)
 
     def test_put_file(self):
         asyncio.run(self.put_file())
