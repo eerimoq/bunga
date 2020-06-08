@@ -6,8 +6,9 @@ import subprocess
 import prompt_toolkit
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.shortcuts import CompleteStyle
+from prompt_toolkit.formatted_text import ANSI
 
 from ..client import Client
 from ..client import ClientThread
@@ -162,8 +163,8 @@ def shell_main(client):
 
     while True:
         try:
-            line = prompt_toolkit.prompt('(bunga) ',
-                                         completer=WordCompleter(commands),
+            line = prompt_toolkit.prompt(ANSI('\x1b[36m(bunga)\x1b[0m '),
+                                         completer=FuzzyWordCompleter(commands),
                                          complete_while_typing=True,
                                          auto_suggest=AutoSuggestFromHistory(),
                                          enable_history_search=True,

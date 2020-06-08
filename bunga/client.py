@@ -9,7 +9,6 @@ import re
 from colors import red
 from colors import yellow
 from colors import green
-from colors import cyan
 
 from .version import __version__
 from .bunga_client import BungaClient
@@ -252,7 +251,7 @@ class Client(BungaClient):
 
 
 def print_info(text):
-    print(cyan(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
+    print(yellow(f'[bunga {time.strftime("%H:%M:%S")}] {text}', style='bold'))
 
 
 def print_error(error):
