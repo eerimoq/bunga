@@ -36,6 +36,7 @@
 #include <sys/eventfd.h>
 #include <pthread.h>
 #include <sys/epoll.h>
+#include <sys/stat.h>
 #include "bunga_server.h"
 #include "ml/ml.h"
 
@@ -198,18 +199,79 @@ static void on_execute_command_req(struct bunga_server_t *self_p,
     ml_spawn((ml_worker_pool_job_entry_t)execute_command_job, command_p);
 }
 
-static void on_get_file_req(struct bunga_server_t *self_p,
-                            struct bunga_server_client_t *client_p,
-                            struct bunga_get_file_req_t *request_p)
+static void get_file_add_data(struct client_t *client_p,
+                              struct bunga_get_file_rsp_t *response_p,
+                              uint8_t *buf_p,
+                              size_t size)
 {
-    (void)client_p;
-    (void)request_p;
+    response_p->data.buf_p = buf_p;
+    response_p->data.size = fread(buf_p, 1, size, client_p->fget_p);
 
+    if (response_p->data.size == 0) {
+        if (ferror(client_p->fget_p) != 0) {
+            response_p->error_p = "Read error.";
+        }
+
+        fclose(client_p->fget_p);
+        client_p->fget_p = NULL;
+    }
+}
+
+static void get_file_open(struct bunga_server_t *self_p,
+                          struct client_t *client_p,
+                          struct bunga_get_file_req_t *request_p)
+{
     struct bunga_get_file_rsp_t *response_p;
+    struct stat statbuf;
+    uint8_t buf[BUNGA_MESSAGE_SIZE_MAX - 64];
 
     response_p = bunga_server_init_get_file_rsp(self_p);
-    response_p->error_p = strerror(ENOSYS);
+
+    if (client_p->fget_p != NULL) {
+        fclose(client_p->fget_p);
+    }
+
+    client_p->fget_p = fopen(request_p->path_p, "rb");
+
+    if (client_p->fget_p != NULL) {
+        if (stat(request_p->path_p, &statbuf) == 0) {
+            response_p->size = statbuf.st_size;
+            get_file_add_data(client_p, response_p, &buf[0], sizeof(buf));
+        } else {
+            response_p->error_p = strerror(errno);
+        }
+    } else {
+        response_p->error_p = strerror(errno);
+    }
+
     bunga_server_reply(self_p);
+}
+
+static void get_file_data(struct bunga_server_t *self_p,
+                          struct client_t *client_p,
+                          struct bunga_get_file_req_t *request_p)
+{
+    struct bunga_get_file_rsp_t *response_p;
+    uint8_t buf[BUNGA_MESSAGE_SIZE_MAX - 64];
+
+    response_p = bunga_server_init_get_file_rsp(self_p);
+    get_file_add_data(client_p, response_p, &buf[0], sizeof(buf));
+    bunga_server_reply(self_p);
+}
+
+static void on_get_file_req(struct bunga_server_t *self_p,
+                            struct bunga_server_client_t *bunga_client_p,
+                            struct bunga_get_file_req_t *request_p)
+{
+    struct client_t *client_p;
+
+    client_p = client_from_bunga_client(bunga_client_p);
+
+    if (strlen(request_p->path_p) > 0) {
+        get_file_open(self_p, client_p, request_p);
+    } else if (client_p->fget_p != NULL) {
+        get_file_data(self_p, client_p, request_p);
+    }
 }
 
 static void put_file_open(struct client_t *client_p,
