@@ -22,6 +22,17 @@ RE_ERROR = re.compile(r'error', re.IGNORECASE)
 RE_WARNING = re.compile(r'warning', re.IGNORECASE)
 
 
+class CompletionError(Exception):
+
+    def __init__(self, error):
+        self.error = error
+
+
+class NotConnectedError(Exception):
+
+    pass
+
+
 class ExecuteCommandError(Exception):
 
     def __init__(self, output, error):
@@ -50,9 +61,6 @@ class Client(BungaClient):
         self._complete_queue = asyncio.Queue(loop=loop)
         self._fout = None
         self._command_output = []
-        self._awaiting_completion = False
-        self._response = None
-        self._error = ''
         self._connect_exception = None
         self._connection_refused_delay = connection_refused_delay
         self._connect_timeout_delay = connect_timeout_delay
@@ -68,11 +76,7 @@ class Client(BungaClient):
 
         self._connected_event.clear()
         self._is_connected = False
-
-        if self._awaiting_completion:
-            self._awaiting_completion = False
-            self._error = 'Connection lost.'
-            await self._complete_queue.put(None)
+        await self._complete_queue.put(('Connection lost.', None))
 
     async def on_connect_failure(self, exception):
         if isinstance(exception, ConnectionRefusedError):
@@ -86,19 +90,29 @@ class Client(BungaClient):
 
         return delay
 
-    async def _signal_completed(self, message):
-        self._awaiting_completion = False
-        self._response = message
-        self._error = message.error
-        await self._complete_queue.put(None)
+    async def _write_completed(self, message):
+        await self._complete_queue.put((message.error, message))
 
     async def _wait_for_completion(self):
-        await self._complete_queue.get()
+        error, message = await self._complete_queue.get()
 
-        if self._error:
-            raise Exception(self._error)
+        if error:
+            raise CompletionError(error)
 
-        return self._response
+        return message
+
+    def _clear_completion_queue(self):
+        while not self._complete_queue.empty():
+            self._complete_queue.get_nowait()
+
+    async def _send_and_wait_for_completion(self):
+        if not self._is_connected:
+            raise NotConnectedError()
+
+        self._clear_completion_queue()
+        self.send()
+
+        return await self._wait_for_completion()
 
     async def on_connect_rsp(self, message):
         # ToDo: Use received keep alive timeout.
@@ -113,7 +127,7 @@ class Client(BungaClient):
         if message.output:
             self._command_output.append(message.output)
         else:
-            await self._signal_completed(message)
+            await self._write_completed(message)
 
     async def on_log_entry_ind(self, message):
         pass
@@ -122,10 +136,10 @@ class Client(BungaClient):
         if message.data:
             self._fout.write(message.data)
         else:
-            await self._signal_completed(message)
+            await self._write_completed(message)
 
     async def on_put_file_rsp(self, message):
-        await self._signal_completed(message)
+        await self._write_completed(message)
 
     async def wait_for_connection(self):
         if not self._is_connected:
@@ -140,44 +154,35 @@ class Client(BungaClient):
 
         """
 
-        await self.wait_for_connection()
-        self._awaiting_completion = True
         self._command_output = []
         message = self.init_execute_command_req()
         message.command = command
-        self.send()
-        await self._complete_queue.get()
-        output = b''.join(self._command_output)
 
-        if self._error:
-            raise ExecuteCommandError(output, self._error)
+        try:
+            await self._send_and_wait_for_completion()
+        except CompletionError as e:
+            raise ExecuteCommandError(b''.join(self._command_output),
+                                      e.error)
 
-        return output
+        return b''.join(self._command_output)
 
     async def get_file(self, remote_path, local_path):
-        await self.wait_for_connection()
-        self._awaiting_completion = True
-
         with open(local_path, 'wb') as self._fout:
             message = self.init_get_file_req()
             message.path = remote_path
             self.send()
-            await self._complete_queue.get()
 
-        if self._error:
-            raise Exception(self._error)
+        await self._complete_queue.get()
 
     async def _put_file_open(self, remote_path, size):
         message = self.init_put_file_req()
         message.path = remote_path
         message.size = size
-        self.send()
-
-        response = await self._wait_for_completion()
+        response = await self._send_and_wait_for_completion()
 
         return response.window_size
 
-    async def _put_file_keep_window_full(self, fin, window_size):
+    async def _put_file_data(self, fin, window_size):
         outstanding_requests = 0
 
         while True:
@@ -196,19 +201,14 @@ class Client(BungaClient):
             response = await self._wait_for_completion()
             outstanding_requests -= response.acknowledge_count
 
-    async def _put_file_close(self, fin):
+    async def _put_file_close(self):
         self.init_put_file_req()
-        self.send()
-
-        await self._wait_for_completion()
+        await self._send_and_wait_for_completion()
 
     async def put_file(self, fin, size, remote_path):
-        await self.wait_for_connection()
-        self._awaiting_completion = True
-
         window_size = await self._put_file_open(remote_path, size)
-        await self._put_file_keep_window_full(fin, window_size)
-        await self._put_file_close(fin)
+        await self._put_file_data(fin, window_size)
+        await self._put_file_close()
 
 
 def print_info(text):
@@ -264,6 +264,10 @@ class ClientThread(threading.Thread):
 
     def stop(self):
         pass
+
+    def wait_for_connection(self):
+        asyncio.run_coroutine_threadsafe(self._client.wait_for_connection(),
+                                         self._loop).result()
 
     def execute_command(self, command):
         return asyncio.run_coroutine_threadsafe(

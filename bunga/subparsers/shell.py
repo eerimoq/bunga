@@ -14,6 +14,7 @@ from ..client import ClientThread
 from ..client import print_info
 from ..client import print_error
 from ..client import format_log_entry
+from ..client import NotConnectedError
 from ..client import ExecuteCommandError
 from .. import linux
 from .. import __version__
@@ -25,8 +26,10 @@ RE_COMMAND = re.compile(r'^\s*(\S+)', re.MULTILINE)
 class ShellClient(Client):
 
     async def on_disconnected(self):
+        if self._is_connected:
+            print_info('Disconnected')
+
         await super().on_disconnected()
-        print_info('Disconnected')
 
     async def on_connect_rsp(self, message):
         await super().on_connect_rsp(message)
@@ -138,6 +141,7 @@ def load_commands(client):
         'dmesg'
     ]
 
+    client.wait_for_connection()
     output = execute_command(client, 'help')
     output = output.split('\nCommands\n')[1]
 
@@ -193,6 +197,8 @@ def shell_main(client):
             except ExecuteCommandError as e:
                 print(e.output.decode('utf-8', 'replace'), end='')
                 print_error(e.error)
+            except NotConnectedError:
+                print_error('Not connected.')
 
 
 def _do_shell(args):

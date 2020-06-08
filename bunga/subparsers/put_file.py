@@ -23,6 +23,7 @@ def do_put_file(args):
                   unit='B',
                   unit_scale=True,
                   unit_divisor=1024) as progress:
+            client.wait_for_connection()
             client.put_file(CallbackIOWrapper(progress.update, fin, 'read'),
                             size,
                             remotefile)

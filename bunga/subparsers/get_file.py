@@ -7,6 +7,7 @@ def _do_get_file(args):
                           connection_refused_delay=None,
                           connect_timeout_delay=None)
     client.start()
+    client.wait_for_connection()
     localfile = create_to_path(args.remotefile, args.localfile)
     client.get_file(args.remotefile, localfile)
 

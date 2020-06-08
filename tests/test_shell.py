@@ -14,6 +14,7 @@ class Client:
 
     def __init__(self):
         self.execute_command = Mock()
+        self.wait_for_connection = Mock()
 
 
 class ShellTest(unittest.TestCase):
