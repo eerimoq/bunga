@@ -168,7 +168,8 @@ class Client(BungaClient):
 
         if self._get_file_size is None:
             await self._on_get_file_rsp_open(message)
-        elif message.data:
+
+        if message.data:
             await self._on_get_file_rsp_data(message)
         else:
             await self._on_get_file_rsp_close(message)

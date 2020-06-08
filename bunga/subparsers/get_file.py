@@ -12,6 +12,10 @@ class ProgressBar:
     def init(self, total):
         self._tqdm = tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024)
 
+    def close(self):
+        if self._tqdm is not None:
+            self._tqdm.close()
+
     def update(self, size):
         self._tqdm.update(size)
 
@@ -23,7 +27,12 @@ def _do_get_file(args):
     client.start()
     client.wait_for_connection()
     localfile = create_to_path(args.remotefile, args.localfile)
-    client.get_file(args.remotefile, localfile, progress=ProgressBar())
+    progress = ProgressBar()
+
+    try:
+        client.get_file(args.remotefile, localfile, progress=progress)
+    finally:
+        progress.close()
 
 
 def add_subparser(subparsers):

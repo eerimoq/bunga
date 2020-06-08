@@ -150,10 +150,9 @@ class ClientTest(unittest.TestCase):
             # Open.
             req = await reader.readexactly(13)
             self.assertEqual(req, b'\x01\x00\x00\x09\x1a\x07\n\x05/init')
-            writer.write(b'\x02\x00\x00\x04"\x02\x08\x08')
+            writer.write(b'\x02\x00\x00\x0a"\x08\x08\x08\x12\x041234')
 
             # Data.
-            writer.write(b'\x02\x00\x00\x08"\x06\x12\x041234')
             req = await reader.readexactly(8)
             self.assertEqual(req, b'\x01\x00\x00\x04\x1a\x02\x18\x01')
             writer.write(b'\x02\x00\x00\x08"\x06\x12\x045678')

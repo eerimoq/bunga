@@ -57,9 +57,6 @@ class CommandLineTest(unittest.TestCase):
         # Open.
         req = client.recv(21)
         self.assertEqual(req, b'\x01\x00\x00\x11\x1a\x0f\n\rtests/put.txt')
-        client.sendall(b'\x02\x00\x00\x04"\x02\x08\x09')
-
-        # Data.
         client.sendall(b'\x02\x00\x00\x0f"\r\x08\t\x12\t12345678\n')
 
         # Close.
