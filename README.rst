@@ -37,7 +37,8 @@ Get a file from your system.
 
 .. code-block:: text
 
-   $ bunga get_file /root/wire.ko
+   $ bunga get_file README.rst
+   100%|█████████████████████████████████████| 1.19k/1.19k [00:00<00:00, 74.1kB/s]
 
 The put_file subcommand
 -----------------------
