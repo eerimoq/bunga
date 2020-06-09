@@ -10,6 +10,7 @@ install:
 script:
   - source setup.sh
   - coverage run --source=bunga setup.py test
+  - make -s -C lib/tst
   - make -s -C lib
 
 after_success:

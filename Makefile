@@ -1,5 +1,6 @@
 test:
 	coverage run --source=bunga setup.py test
+	$(MAKE) -C lib/tst
 	$(MAKE) -C lib
 
 coverage:
