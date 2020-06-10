@@ -30,6 +30,17 @@ Stream logs from your system to your PC.
 
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/log.png
 
+The execute subcommand
+----------------------
+
+Execute given command, ``ls`` in the example below, and print its
+output.
+
+.. code-block:: text
+
+   $ bunga execute ls
+   mnt etc proc init root dev
+
 The get_file subcommand
 -----------------------
 
