@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <pthread.h>
 #include <sys/eventfd.h>
 #include <sys/epoll.h>
@@ -168,7 +169,7 @@ static void shell_execute_command_date(char *line_p, FILE *fout_p)
     fprintf(fout_p, "Today!");
 }
 
-static void execute_command_process_on_execute_command_req(
+static void execute_command_process_on_execute_command_req_date(
     struct bunga_server_t *self_p,
     int fd,
     uint32_t events)
@@ -223,13 +224,10 @@ static void execute_command_send_result(struct bunga_server_t *self_p,
     ASSERT_EQ(execute_command_rsp[1].output.size, 0);
 }
 
-TEST(execute_command)
+static void mock_prepare_tcp_connect(void)
 {
     struct epoll_event event;
 
-    mock_prepare_server_main_until_epoll();
-
-    /* TCP connect. */
     epoll_wait_mock_once(10, 1, -1, 1);
     event.events = EPOLLIN;
     event.data.fd = CLIENT_FD;
@@ -237,23 +235,44 @@ TEST(execute_command)
     bunga_server_process_mock_once(CLIENT_FD, event.events);
     bunga_server_process_mock_set_callback(
         execute_command_process_on_client_connected);
+}
 
-    /* Connect message. */
+static void mock_prepare_connect(void)
+{
+    struct epoll_event event;
+
     epoll_wait_mock_once(10, 1, -1, 1);
     event.events = EPOLLIN;
     event.data.fd = CLIENT_FD;
     epoll_wait_mock_set_events_out(&event, sizeof(event));
     bunga_server_process_mock_once(CLIENT_FD, event.events);
     bunga_server_process_mock_set_callback(execute_command_process_on_connect_req);
+}
 
-    /* Execute command message. */
+static void mock_prepare_execute_command(
+    void (*callback)(struct bunga_server_t *self_p,
+                     int fd,
+                     uint32_t events))
+{
+    struct epoll_event event;
+
     epoll_wait_mock_once(10, 1, -1, 1);
     event.events = EPOLLIN;
     event.data.fd = CLIENT_FD;
     epoll_wait_mock_set_events_out(&event, sizeof(event));
     bunga_server_process_mock_once(CLIENT_FD, event.events);
-    bunga_server_process_mock_set_callback(
-        execute_command_process_on_execute_command_req);
+    bunga_server_process_mock_set_callback(callback);
+}
+
+TEST(execute_command_date_ok)
+{
+    struct epoll_event event;
+
+    mock_prepare_server_main_until_epoll();
+    mock_prepare_tcp_connect();
+    mock_prepare_connect();
+    mock_prepare_execute_command(
+        execute_command_process_on_execute_command_req_date);
 
     /* Execute command completion. */
     epoll_wait_mock_once(10, 1, -1, 1);
@@ -272,6 +291,79 @@ TEST(execute_command)
     bunga_server_init_execute_command_rsp_mock_once(&execute_command_rsp[1]);
     bunga_server_send_mock_once();
     bunga_server_send_mock_set_callback(execute_command_send_result);
+
+    ml_message_free_mock_once();
+
+    /* End loop. */
+    epoll_wait_mock_once(10, 1, -1, -1);
+
+    call_server_main();
+}
+
+static void execute_command_process_on_execute_command_req_date_error(
+    struct bunga_server_t *self_p,
+    int fd,
+    uint32_t events)
+{
+    (void)fd;
+    (void)events;
+
+    struct bunga_execute_command_req_t execute_command_req;
+    uint8_t *message_p;
+    int alloc_handle;
+    int spawn_handle;
+    struct nala_ml_message_alloc_params_t *alloc_params_p;
+    struct nala_ml_spawn_params_t *spawn_params_p;
+
+    message_p = nala_alloc(56);
+    alloc_handle = ml_message_alloc_mock_once(56, message_p);
+    spawn_handle = ml_spawn_mock_once();
+
+    execute_command_req.command_p = "date";
+    call_on_execute_command_req(self_p, &execute_command_req);
+    alloc_params_p = ml_message_alloc_mock_get_params_in(alloc_handle);
+
+    spawn_params_p = ml_spawn_mock_get_params_in(spawn_handle);
+    ml_shell_execute_command_mock_once("date", -EINVAL);
+    ml_queue_put_mock_once();
+
+    spawn_params_p->entry(spawn_params_p->arg_p);
+
+    ml_queue_get_mock_once(alloc_params_p->uid_p);
+    ml_queue_get_mock_set_message_pp_out((void **)&message_p, sizeof(message_p));
+}
+
+static void execute_command_send_error(struct bunga_server_t *self_p,
+                                       struct bunga_server_client_t *client_p)
+{
+    (void)self_p;
+    (void)client_p;
+
+    ASSERT_EQ(execute_command_rsp[0].error_p, "Invalid argument");
+    ASSERT_EQ(execute_command_rsp[0].output.size, 0);
+}
+
+TEST(execute_command_date_error)
+{
+    struct epoll_event event;
+
+    mock_prepare_server_main_until_epoll();
+    mock_prepare_tcp_connect();
+    mock_prepare_connect();
+    mock_prepare_execute_command(
+        execute_command_process_on_execute_command_req_date_error);
+
+    /* Execute command completion. */
+    epoll_wait_mock_once(10, 1, -1, 1);
+    event.events = EPOLLIN;
+    event.data.fd = PUT_FD;
+    epoll_wait_mock_set_events_out(&event, sizeof(event));
+
+    execute_command_rsp[0].error_p = "";
+    execute_command_rsp[0].output.size = 0;
+    bunga_server_init_execute_command_rsp_mock_once(&execute_command_rsp[0]);
+    bunga_server_send_mock_once();
+    bunga_server_send_mock_set_callback(execute_command_send_error);
 
     ml_message_free_mock_once();
 

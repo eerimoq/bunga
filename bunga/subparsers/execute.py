@@ -1,3 +1,5 @@
+import sys
+
 from ..client import Client
 from ..client import ClientThread
 
@@ -8,7 +10,7 @@ def _do_execute(args):
     client.wait_for_connection()
 
     for command in args.commands:
-        client.execute_command(command)
+        sys.stdout.buffer.write(client.execute_command(command))
 
 
 def add_subparser(subparsers):
