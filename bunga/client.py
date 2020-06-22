@@ -9,6 +9,7 @@ import re
 from colors import red
 from colors import yellow
 from colors import green
+from colors import color
 
 from .version import __version__
 from .bunga_client import BungaClient
@@ -16,7 +17,7 @@ from .bunga_client import BungaClient
 
 LOGGER = logging.getLogger(__file__)
 
-RE_ML_LOG = re.compile(r'([\d\- 0-9:]+)(\w+)( \w+)(.*)')
+RE_ML_LOG = re.compile(r'( \d+-\d+-\d+ \d+:\d+:\d+)( [^ ]+)( [^ ]+)(.*)')
 RE_ERROR = re.compile(r'error', re.IGNORECASE)
 RE_WARNING = re.compile(r'warning', re.IGNORECASE)
 
@@ -267,14 +268,15 @@ def format_log_entry(entry):
     if mo:
         date = mo.group(1)
         level = mo.group(2)
-        text = level + mo.group(3) + mo.group(4)
+        log_object = mo.group(3)
+        text = mo.group(4)
 
-        if level in ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR']:
-            text = red(text, style='bold')
-        elif level == 'WARNING':
-            text = yellow(text, style='bold')
+        if level in [' EMERGENCY', ' ALERT', ' CRITICAL', ' ERROR']:
+            level = red(level, style='bold')
+        elif level == ' WARNING':
+            level = yellow(level, style='bold')
 
-        text = yellow(date) + text
+        text = yellow(date) + level + color(log_object, 'grey') + text
     elif is_error(text):
         text = red(text, style='bold')
     elif is_warning(text):

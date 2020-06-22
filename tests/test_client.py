@@ -9,6 +9,7 @@ from io import StringIO
 from colors import red
 from colors import green
 from colors import yellow
+from colors import color
 
 import bunga
 
@@ -275,5 +276,7 @@ class ClientTest(unittest.TestCase):
             + (' imx-sdma 20ec000.sdma: external firmware not found, using ROM '
                'firmware\n')
             + green('[    2.497619]')
-            + yellow(' 1970-01-01 00:00:02 ')
-            + ('INFO dhcp_client State change from INIT to SELECTING.\n'))
+            + yellow(' 1970-01-01 00:00:02')
+            + ' INFO'
+            + color(' dhcp_client', 'grey')
+            + ' State change from INIT to SELECTING.\n')
