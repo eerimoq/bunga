@@ -40,6 +40,18 @@ class ExecuteCommandError(Exception):
         self.error = error
 
 
+class GetFileError(Exception):
+
+    def __init__(self, error):
+        self.error = error
+
+
+class PutFileError(Exception):
+
+    def __init__(self, error):
+        self.error = error
+
+
 class Progress:
 
     def init(self, size):
@@ -212,7 +224,11 @@ class Client(BungaClient):
             message = self.init_get_file_req()
             message.path = remote_path
             self.send()
-            await self._wait_for_completion()
+
+            try:
+                await self._wait_for_completion()
+            except CompletionError as e:
+                raise GetFileError(e.error)
 
     async def _put_file_open(self, remote_path, size):
         message = self.init_put_file_req()
@@ -246,9 +262,12 @@ class Client(BungaClient):
         await self._send_and_wait_for_completion()
 
     async def put_file(self, fin, size, remote_path):
-        window_size = await self._put_file_open(remote_path, size)
-        await self._put_file_data(fin, window_size)
-        await self._put_file_close()
+        try:
+            window_size = await self._put_file_open(remote_path, size)
+            await self._put_file_data(fin, window_size)
+            await self._put_file_close()
+        except CompletionError as e:
+            raise PutFileError(e.error)
 
 
 def print_info(text):
