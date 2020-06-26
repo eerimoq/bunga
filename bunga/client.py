@@ -189,9 +189,9 @@ class Client(BungaClient):
     async def on_put_file_rsp(self, message):
         await self._write_completed(message)
 
-    async def wait_for_connection(self):
+    async def wait_for_connection(self, timeout=None):
         if not self._is_connected:
-            await self._connected_event.wait()
+            await asyncio.wait_for(self._connected_event.wait(), timeout)
 
             if self._connect_exception:
                 raise self._connect_exception
@@ -325,8 +325,8 @@ class ClientThread(threading.Thread):
     def stop(self):
         pass
 
-    def wait_for_connection(self):
-        asyncio.run_coroutine_threadsafe(self._client.wait_for_connection(),
+    def wait_for_connection(self, timeout=None):
+        asyncio.run_coroutine_threadsafe(self._client.wait_for_connection(timeout),
                                          self._loop).result()
 
     def execute_command(self, command):
