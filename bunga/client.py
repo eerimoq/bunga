@@ -42,14 +42,22 @@ class ExecuteCommandError(Exception):
 
 class GetFileError(Exception):
 
-    def __init__(self, error):
+    def __init__(self, remote_path, error):
+        self.remote_path = remote_path
         self.error = error
+
+    def __str__(self):
+        return f"Failed to get '{self.remote_path}' with error '{self.error}'."
 
 
 class PutFileError(Exception):
 
-    def __init__(self, error):
+    def __init__(self, remote_path, error):
+        self.remote_path = remote_path
         self.error = error
+
+    def __str__(self):
+        return f"Failed to put '{self.remote_path}' with error '{self.error}'."
 
 
 class Progress:
@@ -228,7 +236,7 @@ class Client(BungaClient):
             try:
                 await self._wait_for_completion()
             except CompletionError as e:
-                raise GetFileError(e.error)
+                raise GetFileError(remote_path, e.error)
 
     async def _put_file_open(self, remote_path, size):
         message = self.init_put_file_req()
@@ -267,7 +275,7 @@ class Client(BungaClient):
             await self._put_file_data(fin, window_size)
             await self._put_file_close()
         except CompletionError as e:
-            raise PutFileError(e.error)
+            raise PutFileError(remote_path, e.error)
 
 
 def print_info(text):

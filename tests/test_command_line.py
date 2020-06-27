@@ -105,7 +105,8 @@ class CommandLineTest(unittest.TestCase):
             with self.assertRaises(Exception) as cm:
                 bunga.main()
 
-            self.assertEqual(str(cm.exception), 'Not found')
+            self.assertEqual(str(cm.exception),
+                             "Failed to get 'tests/put.txt' with error 'Not found'.")
 
         server.join()
         self.assertIsNone(server.exception)
@@ -192,7 +193,8 @@ class CommandLineTest(unittest.TestCase):
             with self.assertRaises(Exception) as cm:
                 bunga.main()
 
-            self.assertEqual(str(cm.exception), 'bad')
+            self.assertEqual(str(cm.exception),
+                             "Failed to put 'put.txt' with error 'bad'.")
 
         server.join()
         self.assertIsNone(server.exception)
