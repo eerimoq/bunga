@@ -102,12 +102,13 @@ class Client(BungaClient):
         self.send()
 
     async def on_disconnected(self):
-        if not self._is_connected:
+        if self._is_connected:
+            self._connected_event.clear()
+            self._is_connected = False
+            await self._complete_queue.put(('Connection lost.', None))
+        else:
             await asyncio.sleep(1)
 
-        self._connected_event.clear()
-        self._is_connected = False
-        await self._complete_queue.put(('Connection lost.', None))
 
     async def on_connect_failure(self, exception):
         if isinstance(exception, ConnectionRefusedError):
@@ -231,10 +232,9 @@ class Client(BungaClient):
             self._get_progress = progress
             message = self.init_get_file_req()
             message.path = remote_path
-            self.send()
 
             try:
-                await self._wait_for_completion()
+                await self._send_and_wait_for_completion()
             except CompletionError as e:
                 raise GetFileError(remote_path, e.error)
 
