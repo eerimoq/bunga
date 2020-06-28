@@ -13,6 +13,7 @@ from colors import color
 
 from .version import __version__
 from .bunga_client import BungaClient
+from . import linux
 
 
 LOGGER = logging.getLogger(__file__)
@@ -96,6 +97,7 @@ class Client(BungaClient):
         self._connection_refused_delay = connection_refused_delay
         self._connect_timeout_delay = connect_timeout_delay
         self._maximum_message_size = 64
+        self._ps_formatter = linux.PsFormatter()
 
     async def on_connected(self):
         self.init_connect_req()
@@ -205,11 +207,49 @@ class Client(BungaClient):
             if self._connect_exception:
                 raise self._connect_exception
 
+    async def execute_command_netstat(self):
+        output = await self.execute_command('cat /proc/net/tcp')
+
+        return linux.format_netstat(output.decode()).encode()
+
+    async def execute_command_uptime(self):
+        proc_uptime = await self.execute_command('cat /proc/uptime')
+        proc_loadavg = await self.execute_command('cat /proc/loadavg')
+
+        return linux.format_uptime(proc_uptime.decode(),
+                                   proc_loadavg.decode()).encode()
+
+    async def execute_command_ps(self):
+        """This is a ps command for Monolinux, only showing information for
+        the init process and its threads. Make it more general at some
+        point?
+
+        """
+
+        proc_n_stat = []
+        proc_1_task = await self.execute_command('ls /proc/1/task')
+
+        for pid in proc_1_task.split():
+            output = await self.execute_command(
+                f'cat /proc/1/task/{pid.decode()}/stat')
+            proc_n_stat.append(output.decode())
+
+        proc_stat = await self.execute_command('cat /proc/stat')
+
+        return self._ps_formatter.format(proc_stat.decode(), proc_n_stat).encode()
+
     async def execute_command(self, command):
         """Execute given command. Returns the command output as bytes. Raises
         an exception on command failure.
 
         """
+
+        if command == 'netstat':
+            return await self.execute_command_netstat()
+        elif command == 'uptime':
+            return await self.execute_command_uptime()
+        elif command == 'ps':
+            return await self.execute_command_ps()
 
         self._command_output = []
         message = self.init_execute_command_req()

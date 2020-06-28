@@ -48,8 +48,9 @@ class ShellTest(unittest.TestCase):
 
         shell.shell_main(client)
 
+    # ToDo: Move to client tests.
     @patch('prompt_toolkit.prompt')
-    def test_execute_command_netstat(self, prompt):
+    def _test_execute_command_netstat(self, prompt):
         prompt.side_effect = [
             'netstat',
             'exit'
@@ -77,7 +78,7 @@ class ShellTest(unittest.TestCase):
             stdout.getvalue())
 
     @patch('prompt_toolkit.prompt')
-    def test_execute_command_uptime(self, prompt):
+    def _test_execute_command_uptime(self, prompt):
         prompt.side_effect = [
             'uptime',
             'exit'
@@ -105,7 +106,7 @@ class ShellTest(unittest.TestCase):
             stdout.getvalue())
 
     @patch('prompt_toolkit.prompt')
-    def test_execute_command_ps(self, prompt):
+    def _test_execute_command_ps(self, prompt):
         prompt.side_effect = [
             'ps',
             'exit'

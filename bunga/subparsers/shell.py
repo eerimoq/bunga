@@ -18,7 +18,6 @@ from ..client import print_error
 from ..client import format_log_entry
 from ..client import NotConnectedError
 from ..client import ExecuteCommandError
-from .. import linux
 from .. import __version__
 
 
@@ -96,36 +95,6 @@ def execute_command(client, command):
     return client.execute_command(command).decode('utf-8', 'replace')
 
 
-def execute_netstat(client):
-    return linux.format_netstat(execute_command(client, 'cat /proc/net/tcp'))
-
-
-def execute_uptime(client):
-    proc_uptime = execute_command(client, 'cat /proc/uptime')
-    proc_loadavg = execute_command(client, 'cat /proc/loadavg')
-
-    return linux.format_uptime(proc_uptime, proc_loadavg)
-
-
-def execute_ps(client, ps_formatter):
-    """This is a ps command for Monolinux, only showing information for
-    the init process and its threads. Make it more general at some
-    point?
-
-    """
-
-    proc_n_stat = []
-    proc_1_task = execute_command(client, 'ls /proc/1/task')
-
-    for pid in proc_1_task.split():
-        proc_n_stat.append(
-            execute_command(client, f'cat /proc/1/task/{pid}/stat'))
-
-    proc_stat = execute_command(client, 'cat /proc/stat')
-
-    return ps_formatter.format(proc_stat, proc_n_stat)
-
-
 def execute_dmesg(client):
     lines = []
 
@@ -159,7 +128,6 @@ def load_commands(client):
 def shell_main(client):
     user_home = os.path.expanduser('~')
     history = FileHistory(os.path.join(user_home, '.bunga-history.txt'))
-    ps_formatter = linux.PsFormatter()
     commands = load_commands(client)
 
     while True:
@@ -184,13 +152,7 @@ def shell_main(client):
             command, pipe_commands = parse_command(line)
 
             try:
-                if command == 'netstat':
-                    output = execute_netstat(client)
-                elif command == 'uptime':
-                    output = execute_uptime(client)
-                elif command == 'ps':
-                    output = execute_ps(client, ps_formatter)
-                elif command == 'dmesg':
+                if command == 'dmesg':
                     output = execute_dmesg(client)
                 else:
                     output = execute_command(client, command)
