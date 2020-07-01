@@ -88,6 +88,10 @@ static struct bunga_server_client_t bunga_clients[2];
 static struct client_t clients[2];
 static struct ml_queue_t queue;
 static int epoll_fd;
+static uint8_t clients_input_buffers[2][BUNGA_MESSAGE_SIZE_MAX];
+static uint8_t message[BUNGA_MESSAGE_SIZE_MAX];
+static uint8_t workspace_in[BUNGA_MESSAGE_SIZE_MAX + 64];
+static uint8_t workspace_out[BUNGA_MESSAGE_SIZE_MAX + 64];
 
 static ML_UID(uid_execute_command_complete);
 
@@ -147,8 +151,6 @@ static void on_client_connected(struct bunga_server_t *self_p,
 {
     (void)self_p;
 
-    printf("Bunga client connected.\n");
-
     client_on_connected(client_from_bunga_client(client_p));
 }
 
@@ -156,8 +158,6 @@ static void on_client_disconnected(struct bunga_server_t *self_p,
                                    struct bunga_server_client_t *client_p)
 {
     (void)self_p;
-
-    printf("Bunga client disconnected.\n");
 
     client_destroy(client_from_bunga_client(client_p));
 }
@@ -170,11 +170,12 @@ static void execute_command_job(struct execute_command_t *command_p)
 
     if (fout_p != NULL) {
         command_p->res = ml_shell_execute_command(command_p->command_p, fout_p);
+        fclose(fout_p);
     } else {
+        command_p->output.buf_p = NULL;
+        command_p->output.size = 0;
         command_p->res = -ENOMEM;
     }
-
-    fclose(fout_p);
 
     ml_queue_put(command_p->queue_p, command_p);
 }
@@ -296,6 +297,13 @@ static void get_file_data(struct bunga_server_t *self_p,
 {
     uint8_t buf[BUNGA_MESSAGE_SIZE_MAX - 64];
 
+    if (request_p->acknowledge_count > client_p->outstanding_responses) {
+        fclose(client_p->fget_p);
+        client_p->fget_p = NULL;
+
+        return;
+    }
+
     client_p->outstanding_responses -= request_p->acknowledge_count;
 
     get_file_fill_window(self_p, client_p, &buf[0], sizeof(buf));
@@ -314,6 +322,7 @@ static void on_get_file_req(struct bunga_server_t *self_p,
     } else if (client_p->fget_p != NULL) {
         get_file_data(self_p, client_p, request_p);
     }
+
 }
 
 static void put_file_open(struct client_t *client_p,
@@ -421,7 +430,11 @@ static void handle_execute_command_complete(struct execute_command_t *command_p)
     bunga_server_send(server_p, client_p);
 
     free(command_p->command_p);
-    free(command_p->output.buf_p);
+
+    if (command_p->output.buf_p != NULL) {
+        free(command_p->output.buf_p);
+    }
+
     ml_message_free(command_p);
 }
 
@@ -478,7 +491,7 @@ static struct client_t *find_log_client(int log_fd)
 
 static bool handle_log(struct bunga_server_t *server_p, int log_fd)
 {
-    char message[1024];
+    char message[512];
     ssize_t size;
     struct client_t *client_p;
 
@@ -517,10 +530,6 @@ static void on_put_signal_event(int *fd_p)
 static void *server_main()
 {
     struct bunga_server_t server;
-    uint8_t clients_input_buffers[2][BUNGA_MESSAGE_SIZE_MAX];
-    uint8_t message[BUNGA_MESSAGE_SIZE_MAX];
-    uint8_t workspace_in[BUNGA_MESSAGE_SIZE_MAX + 64];
-    uint8_t workspace_out[BUNGA_MESSAGE_SIZE_MAX + 64];
     int put_fd;
     struct epoll_event event;
     int res;
@@ -531,20 +540,15 @@ static void *server_main()
 
     pthread_setname_np(pthread_self(), "bunga_server");
 
-    printf("Starting a Bunga server on ':28000'.\n");
-
     epoll_fd = epoll_create1(0);
 
     if (epoll_fd == -1) {
-        printf("epoll_create1() failed.\n");
         return (NULL);
     }
 
     put_fd = eventfd(0, EFD_SEMAPHORE);
 
     if (put_fd == -1) {
-        printf("eventfd() failed.\n");
-
         return (NULL);
     }
 
@@ -554,8 +558,6 @@ static void *server_main()
     res = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, put_fd, &event);
 
     if (res == -1) {
-        printf("epoll_ctl_add() failed.\n");
-
         return (NULL);
     }
 
@@ -584,8 +586,6 @@ static void *server_main()
                             NULL);
 
     if (res != 0) {
-        printf("Init failed.\n");
-
         return (NULL);
     }
 
@@ -596,12 +596,8 @@ static void *server_main()
     res = bunga_server_start(&server);
 
     if (res != 0) {
-        printf("Start failed.\n");
-
         return (NULL);
     }
-
-    printf("Server started.\n");
 
     while (true) {
         res = epoll_wait(epoll_fd, &event, 1, -1);
@@ -618,11 +614,8 @@ static void *server_main()
             if (uid_p == &uid_execute_command_complete) {
                 handle_execute_command_complete(message_p);
             }
+        } else if (handle_log(&server, event.data.fd)) {
         } else {
-            if (handle_log(&server, event.data.fd)) {
-                continue;
-            }
-
             bunga_server_process(&server, event.data.fd, event.events);
         }
     }

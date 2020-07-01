@@ -677,8 +677,6 @@ int bunga_server_init(
     int epoll_fd,
     messi_epoll_ctl_t epoll_ctl)
 {
-    (void)clients_max;
-
     int i;
     int res;
 
@@ -977,4 +975,3 @@ struct bunga_put_file_rsp_t *bunga_server_init_put_file_rsp(
 
     return (&self_p->output.message_p->messages.value.put_file_rsp);
 }
-
