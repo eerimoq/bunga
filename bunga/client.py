@@ -36,9 +36,13 @@ class NotConnectedError(Exception):
 
 class ExecuteCommandError(Exception):
 
-    def __init__(self, output, error):
+    def __init__(self, command, output, error):
+        self.command = command
         self.output = output
         self.error = error
+
+    def __str__(self):
+        return f"'{self.command}' failed with '{self.error}'."
 
 
 class GetFileError(Exception):
@@ -167,9 +171,10 @@ class Client(BungaClient):
         pass
 
     async def _on_get_file_rsp_open(self, message):
+        self._get_progress.init(message.size)
+
         if message.size > 0:
             self._get_file_size = message.size
-            self._get_progress.init(message.size)
         else:
             self._fget = None
             await self._write_completed(message)
@@ -258,7 +263,8 @@ class Client(BungaClient):
         try:
             await self._send_and_wait_for_completion()
         except CompletionError as e:
-            raise ExecuteCommandError(b''.join(self._command_output),
+            raise ExecuteCommandError(command,
+                                      b''.join(self._command_output),
                                       e.error)
 
         return b''.join(self._command_output)

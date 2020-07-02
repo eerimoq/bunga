@@ -202,7 +202,7 @@ class ShellTest(unittest.TestCase):
         client = Client()
         client.execute_command.side_effect = [
             b'\nCommands\n',
-            bunga.ExecuteCommandError(b'', 'Bad command.')
+            bunga.ExecuteCommandError('bad', b'', 'Bad command.')
         ]
         stdout = StringIO()
 
