@@ -35,6 +35,10 @@ The monitor subcommand
 
 Monitor any command output over time. In this example the temperature.
 
+.. code-block:: text
+
+   $ bunga monitor temperature
+
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/monitor.gif
         
 The execute subcommand
