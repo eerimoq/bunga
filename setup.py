@@ -30,7 +30,8 @@ setup(name='bunga',
           'grpcio-tools',
           'ansicolors',
           'humanfriendly',
-          'tqdm'
+          'tqdm',
+          'plotille'
       ],
       test_suite="tests",
       include_package_data=True,
