@@ -30,6 +30,13 @@ Stream logs from your system to your PC.
 
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/log.png
 
+The monitor subcommand
+----------------------
+
+Monitor any command output over time. In this example the temperature.
+
+.. image:: https://github.com/eerimoq/bunga/raw/master/docs/monitor.git
+
 The execute subcommand
 ----------------------
 
