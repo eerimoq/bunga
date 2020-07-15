@@ -98,6 +98,7 @@ class Monitor:
         self._timespan = config['timespan']
         self._x_axis_offset = None
         self._timestamp = time.time()
+        self._title = config['title']
 
         stdscr.keypad(True)
         stdscr.nodelay(True)
@@ -213,7 +214,7 @@ class Monitor:
                    frame_col_right,
                    frame_ncols):
         self.add_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
-        self.addstr(frame_row_top, frame_col_left + 1, ' Temperature [C] ')
+        self.addstr(frame_row_top, frame_col_left + 1, f' {self._title} ')
 
         if self._connected:
             self.addstr_green(frame_row_top, frame_col_right - 11, ' Connected ')
