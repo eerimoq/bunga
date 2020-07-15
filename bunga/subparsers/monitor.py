@@ -245,7 +245,8 @@ class Monitor:
                              x_min=x_axis_minimum,
                              x_max=x_axis_maximum,
                              y_min=y_axis_minimum,
-                             y_max=y_axis_maximum)
+                             y_max=y_axis_maximum,
+                             origin=False)
 
         for row, line in enumerate(text.splitlines()[1:-2]):
             y, _, line = line.partition('|')
