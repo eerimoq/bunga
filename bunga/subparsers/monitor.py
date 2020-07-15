@@ -1,3 +1,4 @@
+import os
 import threading
 import re
 import time
@@ -6,18 +7,18 @@ from datetime import datetime
 import plotille
 import queue
 import math
+import json
 
 
-DEFAULT_CONFIG = [
-    {
-        'name': 'temperature',
+DEFAULT_CONFIG = {
+    'temperature': {
         'title': 'Temperature [C]',
-        'type': 'time-series',
         'command': 'ds18b20 read 28000013423433',
         'pattern': '^(\d+\.\d+)',
-        'interval': 10
+        'interval': 5,
+        'timespan': 60
     }
-]
+}
 
 HELP_FMT = '''\
 Quit: q or <Ctrl-C>
@@ -40,28 +41,52 @@ def format_clock(timestamp):
 
 class Producer(threading.Thread):
 
-    def __init__(self, data_queue):
+    def __init__(self, config, data_queue):
         super().__init__()
         self._data_queue = data_queue
         self.daemon = True
+        self._interval = config['interval']
         self._x = 0
 
     def run(self):
         while True:
             self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
             self._x += 0.2
-            time.sleep(1)
+            time.sleep(self._interval)
 
 
 class QuitError(Exception):
     pass
 
 
+def load_config(path, name):
+    if os.path.isfile(path):
+        with open(path, 'r') as fin:
+            config = json.load(fin)
+    else:
+        config = DEFAULT_CONFIG
+
+    try:
+        config = config[name]
+    except KeyError:
+        raise Exception(f"Monitor '{name}' not found.")
+
+    if config['interval'] < 1:
+        raise Exception('Interval must be at least one.')
+
+    if config['timespan'] < 1:
+        raise Exception('Timespan must be at least one.')
+
+    config['pattern'] = re.compile(config['pattern'])
+
+    return config
+
+
 class Monitor:
 
-    def __init__(self, stdscr, data_queue, args):
+    def __init__(self, stdscr, config, args):
         self._stdscr = stdscr
-        self._data_queue = data_queue
+        self._data_queue = queue.Queue()
         self._nrows, self._ncols = stdscr.getmaxyx()
         self._modified = True
         self._show_help = False
@@ -70,7 +95,7 @@ class Monitor:
         self._connected = True
         self._timestamps = []
         self._values = []
-        self._timespan = 60
+        self._timespan = config['timespan']
         self._x_axis_offset = None
         self._timestamp = time.time()
 
@@ -81,6 +106,9 @@ class Monitor:
         curses.init_pair(1, curses.COLOR_CYAN, -1)
         curses.init_pair(2, curses.COLOR_RED, -1)
         curses.init_pair(3, curses.COLOR_GREEN, -1)
+
+        self._producer = Producer(config, self._data_queue)
+        self._producer.start()
 
     def run(self):
         while True:
@@ -377,12 +405,10 @@ class Monitor:
 
 
 def _do_monitor(args):
-    data_queue = queue.Queue()
-    producer = Producer(data_queue)
-    producer.start()
+    config = load_config('bunga-monitor.json', args.name)
 
     def monitor(stdscr):
-        Monitor(stdscr, data_queue, args).run()
+        Monitor(stdscr, config, args).run()
 
     try:
         curses.wrapper(monitor)
