@@ -48,7 +48,7 @@ class Producer(threading.Thread):
 
     def run(self):
         while True:
-            self._data_queue.put((time.time(), 22 + 4 * math.sin(self._x)))
+            self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
             self._x += 0.2
             time.sleep(1)
 
@@ -68,7 +68,8 @@ class Monitor:
         self._playing = True
         self._grid = True
         self._connected = True
-        self._data = []
+        self._timestamps = []
+        self._values = []
         self._timespan = 60
         self._x_axis_offset = None
         self._timestamp = time.time()
@@ -130,7 +131,13 @@ class Monitor:
             '└──────────────────────────────────────────────────────────┘')
 
     def draw_main(self):
-        frame_col_left = 3
+        if self._values:
+            frame_col_left = max(len(str(round(min(self._values)))),
+                                 len(str(round(max(self._values)))))
+            frame_col_left += 1
+        else:
+            frame_col_left = 3
+
         frame_col_right = self._ncols - 1
         frame_ncols = frame_col_right - frame_col_left
         frame_row_top = 0
@@ -159,7 +166,7 @@ class Monitor:
                            x_axis_minimum,
                            x_axis_maximum)
 
-        if self._data:
+        if self._timestamps:
             self.draw_data(frame_col_left,
                            frame_nrows,
                            frame_ncols,
@@ -178,7 +185,7 @@ class Monitor:
                    frame_col_right,
                    frame_ncols):
         self.add_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
-        self.addstr(frame_row_top, 4, ' Temperature [C] ')
+        self.addstr(frame_row_top, frame_col_left + 1, ' Temperature [C] ')
 
         if self._connected:
             self.addstr_green(frame_row_top, frame_col_right - 11, ' Connected ')
@@ -197,21 +204,14 @@ class Monitor:
                   frame_ncols,
                   x_axis_minimum,
                   x_axis_maximum):
-        timestamps = []
-        values = []
-
-        for timestamp, value in self._data:
-            timestamps.append(timestamp)
-            values.append(value)
-
-        minimum_value = min(values)
-        maximum_value = max(values)
+        minimum_value = min(self._values)
+        maximum_value = max(self._values)
         delta = max(maximum_value - minimum_value, 1)
         y_axis_minimum = minimum_value - delta * 0.1
         y_axis_maximum = maximum_value + delta * 0.1
 
-        text = plotille.plot(timestamps,
-                             values,
+        text = plotille.plot(self._timestamps,
+                             self._values,
                              height=frame_nrows - 2,
                              width=frame_ncols - 1,
                              x_min=x_axis_minimum,
@@ -223,7 +223,7 @@ class Monitor:
             y, _, line = line.partition('|')
 
             if ((frame_nrows - row - 5) % 6) == 0:
-                self.addstr(row + 1, 0, str(int(round(float(y)))))
+                self.addstr(row + 1, 0, str(round(float(y))))
 
             for mo in RE_SPLIT.finditer(line[1:]):
                 self.addstr(row + 1, frame_col_left + 1 + mo.start(1), mo.group(1))
@@ -339,7 +339,8 @@ class Monitor:
             self._timespan = 60
             self._x_axis_offset = None
         elif key == 'c':
-            self._data = []
+            self._timestamps = []
+            self._values = []
 
     def process_user_input(self):
         try:
@@ -360,7 +361,9 @@ class Monitor:
     def update_data(self):
         try:
             while True:
-                self._data.append(self._data_queue.get_nowait())
+                timestamp, value = self._data_queue.get_nowait()
+                self._timestamps.append(timestamp)
+                self._values.append(value)
                 self._modified = True
         except queue.Empty:
             pass
