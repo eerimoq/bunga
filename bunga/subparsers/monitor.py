@@ -85,6 +85,7 @@ def load_config(path, name):
 class Monitor:
 
     def __init__(self, stdscr, config, args):
+        self._config = config
         self._stdscr = stdscr
         self._data_queue = queue.Queue()
         self._nrows, self._ncols = stdscr.getmaxyx()
@@ -98,7 +99,6 @@ class Monitor:
         self._timespan = config['timespan']
         self._x_axis_offset = None
         self._timestamp = time.time()
-        self._title = config['title']
 
         stdscr.keypad(True)
         stdscr.nodelay(True)
@@ -214,7 +214,7 @@ class Monitor:
                    frame_col_right,
                    frame_ncols):
         self.add_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
-        self.addstr(frame_row_top, frame_col_left + 1, f' {self._title} ')
+        self.addstr(frame_row_top, frame_col_left + 1, f' {self._config["title"]} ')
 
         if self._connected:
             self.addstr_green(frame_row_top, frame_col_right - 11, ' Connected ')
@@ -239,7 +239,7 @@ class Monitor:
         y_axis_minimum = minimum_value - delta * 0.1
         y_axis_maximum = maximum_value + delta * 0.1
 
-        text = plotille.plot(self._timestamps,
+        plot = plotille.plot(self._timestamps,
                              self._values,
                              height=frame_nrows - 2,
                              width=frame_ncols - 1,
@@ -249,7 +249,7 @@ class Monitor:
                              y_max=y_axis_maximum,
                              origin=False)
 
-        for row, line in enumerate(text.splitlines()[1:-2]):
+        for row, line in enumerate(plot.splitlines()[1:-2]):
             y, _, line = line.partition('|')
 
             if ((frame_nrows - row - 5) % 6) == 0:
@@ -366,7 +366,7 @@ class Monitor:
 
             self._x_axis_offset += self._timespan / 8
         elif key == 'r':
-            self._timespan = 60
+            self._timespan = self._config['timespan']
             self._x_axis_offset = None
         elif key == 'c':
             self._timestamps = []
