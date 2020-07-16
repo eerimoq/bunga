@@ -22,11 +22,12 @@ DEFAULT_CONFIG = {
 
 HELP_FMT = '''\
 Quit: q or <Ctrl-C>
+Move: <Left>, <Right>, <Up> and <Down>
+Zoom: <Ctrl-Up> and <Ctrl-Down>
 Pause: <Space>
-Grid: g
-Move: <Left> and <Right>
-Zoom: <Up> and <Down>
+Reset: r
 Clear: c
+Grid: g
 Help: h or ?\
 '''
 
