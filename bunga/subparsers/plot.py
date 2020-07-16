@@ -268,14 +268,9 @@ class Plot:
         timestamps, values = self.data_timespan_slice(x_axis_minimum,
                                                       x_axis_maximum)
         y_axis_minimum, y_axis_maximum = self.calc_y_limits(values)
-
-        if values:
-            frame_col_left = max(len(str(round(min(values)))),
-                                 len(str(round(max(values)))))
-            frame_col_left += 1
-        else:
-            frame_col_left = 0
-
+        frame_col_left = max(len(str(round(y_axis_minimum))),
+                             len(str(round(y_axis_maximum))))
+        frame_col_left += 1
         frame_col_right = self._ncols - 1
         frame_ncols = frame_col_right - frame_col_left
         frame_row_top = 0
