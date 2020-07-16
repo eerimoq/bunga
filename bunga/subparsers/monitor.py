@@ -50,8 +50,12 @@ class Producer(threading.Thread):
 
     def run(self):
         while True:
-            self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
-            self._x += 0.2
+            # self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
+            # self._x += 0.2
+            self._data_queue.put((time.time(), self._x))
+            self._x += 1
+            if self._x > 30:
+                self._x = 0
             time.sleep(self._interval)
 
 
@@ -82,6 +86,10 @@ def load_config(path, name):
     return config
 
 
+def is_y_axis_grid_row(frame_nrows, row):
+    return ((frame_nrows - row - 4) % 6) == 0
+
+
 class Monitor:
 
     def __init__(self, stdscr, config, args):
@@ -92,14 +100,18 @@ class Monitor:
         self._modified = True
         self._show_help = False
         self._playing = True
-        self._grid = True
+        self._show_grid = True
         self._connected = True
-        self._timestamps = []
-        self._values = []
+        self._data = []
         self._timespan = config['timespan']
-        self._x_axis_offset = None
+        self._valuespan = 1
+        self._x_axis_center = None
+        self._y_axis_center = None
+        self._x_axis_zoom = 1
+        self._y_axis_zoom = 1
         self._timestamp = time.time()
-
+        self._y_axis_maximum = 0
+        
         stdscr.keypad(True)
         stdscr.nodelay(True)
         curses.use_default_colors()
@@ -110,6 +122,14 @@ class Monitor:
 
         self._producer = Producer(config, self._data_queue)
         self._producer.start()
+
+    @property
+    def timespan(self):
+        return self._timespan / self._x_axis_zoom
+
+    @property
+    def valuespan(self):
+        return self._valuespan / self._y_axis_zoom
 
     def run(self):
         while True:
@@ -143,29 +163,117 @@ class Monitor:
         text_col_left = margin + 2
         help_lines = HELP_FMT.splitlines()
 
-        self.add_frame(
+        self.addstr_frame(
             1,
             margin,
             '┌──────────────────────────────────────────────────────────┐')
         self.addstr(1, margin + 1, ' Help ')
 
         for row, line in enumerate(help_lines, 2):
-            self.add_frame(row, margin, '│')
-            self.add_frame(row, margin + HELP_NCOLS - 1, '│')
+            self.addstr_frame(row, margin, '│')
+            self.addstr_frame(row, margin + HELP_NCOLS - 1, '│')
             self.addstr(row, text_col_left, line)
 
-        self.add_frame(
+        self.addstr_frame(
             len(help_lines) + 2,
             margin,
             '└──────────────────────────────────────────────────────────┘')
 
+    def calc_x_limits(self):
+        if self.is_moved():
+            maximum = self._x_axis_center + self.timespan / 2
+        else:
+            maximum = self._timestamp
+
+        minimum = maximum - self.timespan
+
+        return minimum, maximum
+
+    def calc_y_limits(self, values):
+        if self.is_moved():
+            y_axis_maximum = self._y_axis_center + self.valuespan / 2
+            y_axis_minimum = y_axis_maximum - self.valuespan
+        else:
+            if values:
+                minimum_value = min(values)
+                maximum_value = max(values)
+                delta = max(maximum_value - minimum_value, 1)
+                y_axis_minimum = minimum_value - delta * 0.1
+                y_axis_maximum = maximum_value + delta * 0.1
+                self._y_axis_maximum = y_axis_maximum
+            else:
+                y_axis_minimum = 0
+                y_axis_maximum = 1
+
+            self._valuespan = y_axis_maximum - y_axis_minimum
+
+            y_axis_minimum /= self._y_axis_zoom
+            y_axis_maximum /= self._y_axis_zoom
+
+        return y_axis_minimum, y_axis_maximum
+
+    def calc_grid_cols(self,
+                       frame_col_left,
+                       frame_ncols,
+                       x_axis_minimum,
+                       x_axis_maximum):
+        alignment = x_axis_minimum % (self.timespan / 4)
+        minimum = x_axis_minimum - alignment
+        maximum = x_axis_maximum + alignment
+        cols = []
+
+        for i in range(1, 5):
+            timestamp = minimum + self.timespan / 4 * i
+            col = int(frame_ncols *
+                      (timestamp - x_axis_minimum) / (x_axis_maximum - x_axis_minimum))
+
+            if 0 < col < frame_ncols:
+                cols.append((frame_col_left + col, timestamp))
+
+        return cols
+
+    def data_timespan_slice(self,
+                            x_axis_minimum,
+                            x_axis_maximum):
+        timestamps = []
+        values = []
+        timestamp_before_x_axis_minimim = None
+        value_before_x_axis_minimim = None
+
+        for timestamp, value in self._data:
+            if timestamp < x_axis_minimum:
+                timestamp_before_x_axis_minimim = timestamp
+                value_before_x_axis_minimim = value
+            elif timestamp > x_axis_maximum:
+                timestamps.append(timestamp)
+                values.append(value)
+                break
+            else:
+                if timestamp_before_x_axis_minimim is not None:
+                    timestamps.append(timestamp_before_x_axis_minimim)
+                    values.append(value_before_x_axis_minimim)
+                    timestamp_before_x_axis_minimim = None
+
+                timestamps.append(timestamp)
+                values.append(value)
+
+        return timestamps, values
+
     def draw_main(self):
-        if self._values:
-            frame_col_left = max(len(str(round(min(self._values)))),
-                                 len(str(round(max(self._values)))))
+        if self._playing and not self.is_moved():
+            self._timestamp = time.time()
+
+        x_axis_minimum, x_axis_maximum = self.calc_x_limits()
+        timestamps, values = self.data_timespan_slice(x_axis_minimum,
+                                                      x_axis_maximum)
+        y_axis_minimum, y_axis_maximum = self.calc_y_limits(values)
+
+        if values:
+            frame_col_left = max(len(str(round(min(values)))),
+                                 len(str(round(max(values)))))
             frame_col_left += 1
         else:
-            frame_col_left = 3
+            frame_col_left = 0
 
         frame_col_right = self._ncols - 1
         frame_ncols = frame_col_right - frame_col_left
@@ -173,47 +281,49 @@ class Monitor:
         frame_row_bottom = self._nrows - 2
         frame_nrows = frame_row_bottom - frame_row_top
 
+        grid_cols = self.calc_grid_cols(frame_col_left,
+                                        frame_ncols,
+                                        x_axis_minimum,
+                                        x_axis_maximum)
+
         self.draw_frame(frame_row_top,
                         frame_col_left,
                         frame_col_right,
                         frame_ncols)
 
-        if self._playing:
-            self._timestamp = time.time()
-
-        x_axis_maximum = self._timestamp
-
-        if self._x_axis_offset is not None:
-            x_axis_maximum += self._x_axis_offset
-
-        x_axis_minimum = x_axis_maximum - self._timespan
-
-        if self._grid:
+        if self._show_grid:
             self.draw_grid(frame_col_left,
                            frame_nrows,
                            frame_ncols,
-                           x_axis_minimum,
-                           x_axis_maximum)
+                           grid_cols)
 
-        if self._timestamps:
-            self.draw_data(frame_col_left,
+        if timestamps:
+            self.draw_data(timestamps,
+                           values,
+                           frame_col_left,
                            frame_nrows,
                            frame_ncols,
                            x_axis_minimum,
-                           x_axis_maximum)
+                           x_axis_maximum,
+                           y_axis_minimum,
+                           y_axis_maximum)
 
-        self.draw_x_axis(frame_col_left,
-                         frame_nrows,
-                         frame_ncols,
+        self.draw_x_axis(frame_nrows,
                          x_axis_minimum,
-                         x_axis_maximum)
+                         x_axis_maximum,
+                         grid_cols)
+
+        self.draw_y_axis(frame_col_left,
+                         frame_nrows,
+                         y_axis_minimum,
+                         y_axis_maximum)
 
     def draw_frame(self,
                    frame_row_top,
                    frame_col_left,
                    frame_col_right,
                    frame_ncols):
-        self.add_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
+        self.addstr_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
         self.addstr(frame_row_top, frame_col_left + 1, f' {self._config["title"]} ')
 
         if self._connected:
@@ -222,26 +332,24 @@ class Monitor:
             self.addstr_red_bold(frame_row_top, frame_col_right - 14, ' Disconnected ')
 
         for row in range(self._nrows - 2):
-            self.add_frame(row + 1, frame_col_left, '│')
-            self.add_frame(row + 1, frame_col_right, '│')
+            self.addstr_frame(row + 1, frame_col_left, '│')
+            self.addstr_frame(row + 1, frame_col_right, '│')
 
-        self.add_frame(self._nrows - 2, frame_col_left, '└' + (frame_ncols - 1) * '─' + '┘')
+        self.addstr_frame(self._nrows - 2, frame_col_left, '└' + (frame_ncols - 1) * '─' + '┘')
 
     def draw_data(self,
+                  timestamps,
+                  values,
                   frame_col_left,
                   frame_nrows,
                   frame_ncols,
                   x_axis_minimum,
-                  x_axis_maximum):
-        minimum_value = min(self._values)
-        maximum_value = max(self._values)
-        delta = max(maximum_value - minimum_value, 1)
-        y_axis_minimum = minimum_value - delta * 0.1
-        y_axis_maximum = maximum_value + delta * 0.1
-
-        plot = plotille.plot(self._timestamps,
-                             self._values,
-                             height=frame_nrows - 2,
+                  x_axis_maximum,
+                  y_axis_minimum,
+                  y_axis_maximum):
+        plot = plotille.plot(timestamps,
+                             values,
+                             height=frame_nrows - 1,
                              width=frame_ncols - 1,
                              x_min=x_axis_minimum,
                              x_max=x_axis_maximum,
@@ -249,60 +357,47 @@ class Monitor:
                              y_max=y_axis_maximum,
                              origin=False)
 
-        for row, line in enumerate(plot.splitlines()[1:-2]):
-            y, _, line = line.partition('|')
-
-            if ((frame_nrows - row - 5) % 6) == 0:
-                self.addstr(row + 1, 0, str(round(float(y))))
-
-            for mo in RE_SPLIT.finditer(line[1:]):
-                self.addstr(row + 1, frame_col_left + 1 + mo.start(1), mo.group(1))
+        for row, line in enumerate(plot.splitlines()[:-2]):
+            for mo in RE_SPLIT.finditer(line.partition('|')[2][1:]):
+                self.addstr(row - 1, frame_col_left + 1 + mo.start(1), mo.group(1))
 
     def draw_x_axis(self,
+                    frame_nrows,
+                    x_axis_minimum,
+                    x_axis_maximum,
+                    grid_cols):
+        for col, timestamp in grid_cols:
+            self.addstr_frame(frame_nrows, col, '┼')
+            self.addstr(frame_nrows + 1, col - 3, format_clock(timestamp))
+
+    def draw_y_axis(self,
                     frame_col_left,
                     frame_nrows,
-                    frame_ncols,
-                    x_axis_minimum,
-                    x_axis_maximum):
-        for row in range(frame_nrows):
-            if ((frame_nrows - row - 5) % 6) == 0:
-                self.add_frame(row + 1, frame_col_left, '┼')
-
-        alignment = x_axis_minimum % (self._timespan // 4)
-        minimum = int(x_axis_minimum - alignment)
-        maximum = int(x_axis_maximum + alignment)
-
-        for timestamp in range(minimum, maximum, self._timespan // 4):
-            col = int(frame_ncols *
-                      (timestamp - x_axis_minimum) / (x_axis_maximum - x_axis_minimum))
-
-            if 0 < col < frame_ncols:
-                self.add_frame(frame_nrows, frame_col_left + col, '┼')
-                self.addstr(frame_nrows + 1,
-                            frame_col_left + col - 3,
-                            format_clock(timestamp))
+                    y_axis_minimum,
+                    y_axis_maximum):
+        for row in range(1, frame_nrows):
+            if is_y_axis_grid_row(frame_nrows, row):
+                self.addstr_frame(row, frame_col_left, '┼')
+                self.addstr_frame(
+                    row,
+                    0,
+                    str(round(y_axis_minimum
+                              + (frame_nrows - row + 1)
+                              * (y_axis_maximum - y_axis_minimum) / frame_nrows)))
 
     def draw_grid(self,
                   frame_col_left,
                   frame_nrows,
                   frame_ncols,
-                  x_axis_minimum,
-                  x_axis_maximum):
+                  grid_cols):
         line = (frame_ncols - 1) * '╌'
-        alignment = x_axis_minimum % (self._timespan // 4)
-        minimum = int(x_axis_minimum - alignment)
-        maximum = int(x_axis_maximum + alignment)
 
         for row in range(1, frame_nrows):
-            if ((frame_nrows - row - 4) % 6) == 0:
-                self.add_frame(row, frame_col_left + 1, line)
+            if is_y_axis_grid_row(frame_nrows, row):
+                self.addstr_frame(row, frame_col_left + 1, line)
 
-            for timestamp in range(minimum, maximum, self._timespan // 4):
-                col = int(frame_ncols *
-                          (timestamp - x_axis_minimum) / (x_axis_maximum - x_axis_minimum))
-
-                if 0 < col < frame_ncols:
-                    self.add_frame(row, frame_col_left + col, '┆')
+            for col, _ in grid_cols:
+                self.addstr_frame(row, col, '┆')
 
     def addstr(self, row, col, text):
         try:
@@ -310,29 +405,20 @@ class Monitor:
         except curses.error:
             pass
 
-    def addstr_red_bold(self, row, col, text):
+    def addstra(self, row, col, text, attr):
         try:
-            self._stdscr.addstr(row,
-                                col,
-                                text.encode('utf-8'),
-                                curses.color_pair(2) | curses.A_BOLD)
+            self._stdscr.addstr(row, col, text.encode('utf-8'), attr)
         except curses.error:
             pass
+
+    def addstr_red_bold(self, row, col, text):
+        self.addstra(row, col, text, curses.color_pair(2) | curses.A_BOLD)
 
     def addstr_green(self, row, col, text):
-        try:
-            self._stdscr.addstr(row,
-                                col,
-                                text.encode('utf-8'),
-                                curses.color_pair(3))
-        except curses.error:
-            pass
+        self.addstra(row, col, text, curses.color_pair(3))
 
-    def add_frame(self, row, col, text):
-        try:
-            self._stdscr.addstr(row, col, text.encode('utf-8'), curses.color_pair(1))
-        except curses.error:
-            pass
+    def addstr_frame(self, row, col, text):
+        self.addstra(row, col, text, curses.color_pair(1))
 
     def process_user_input_help(self, key):
         self._show_help = False
@@ -343,34 +429,51 @@ class Monitor:
         elif key == ' ':
             self._playing = not self._playing
         elif key == 'g':
-            self._grid = not self._grid
+            self._show_grid = not self._show_grid
         elif key == 'KEY_UP':
-            if self._timespan >= 20:
-                self._timespan = int(self._timespan / 2)
-
-                if self._x_axis_offset is not None:
-                    self._x_axis_offset -= self._timespan / 2
+            self.ensure_moving()
+            self._y_axis_center += self.valuespan / 8
         elif key == 'KEY_DOWN':
-            if self._x_axis_offset is not None:
-                self._x_axis_offset += self._timespan / 2
-
-            self._timespan *= 2
+            self.ensure_moving()
+            self._y_axis_center -= self.valuespan / 8
         elif key == 'KEY_LEFT':
-            if self._x_axis_offset is None:
-                self._x_axis_offset = 0
-
-            self._x_axis_offset -= self._timespan / 8
+            self.ensure_moving()
+            self._x_axis_center -= self.timespan / 8
         elif key == 'KEY_RIGHT':
-            if self._x_axis_offset is None:
-                self._x_axis_offset = 0
-
-            self._x_axis_offset += self._timespan / 8
+            self.ensure_moving()
+            self._x_axis_center += self.timespan / 8
         elif key == 'r':
             self._timespan = self._config['timespan']
-            self._x_axis_offset = None
+            self._x_axis_zoom = 1
+            self._y_axis_zoom = 1
+            self._x_axis_center = None
+            self._y_axis_center = None
         elif key == 'c':
-            self._timestamps = []
-            self._values = []
+            self._data = []
+        elif key == 'kUP5':
+            self._x_axis_zoom *= 2
+
+            if self.is_moved():
+                self._y_axis_zoom *= 2
+        elif key == 'kDN5':
+            self._x_axis_zoom /= 2
+
+            if self.is_moved():
+                self._y_axis_zoom /= 2
+
+    def ensure_moving(self):
+        if not self.is_moved():
+            self._x_axis_center = self._timestamp - self.timespan / 2
+            self._y_axis_center = self._y_axis_maximum - self.valuespan / 2
+    
+    def is_moved(self):
+        if self._x_axis_center is not None:
+            return True
+
+        if self._y_axis_center is not None:
+            return True
+
+        return False
 
     def process_user_input(self):
         try:
@@ -391,9 +494,7 @@ class Monitor:
     def update_data(self):
         try:
             while True:
-                timestamp, value = self._data_queue.get_nowait()
-                self._timestamps.append(timestamp)
-                self._values.append(value)
+                self._data.append(self._data_queue.get_nowait())
                 self._modified = True
         except queue.Empty:
             pass
@@ -404,6 +505,7 @@ class Monitor:
 
         if curses.is_term_resized(self._nrows, self._ncols):
             self._nrows, self._ncols = self._stdscr.getmaxyx()
+            self._modified = True
 
 
 def _do_monitor(args):
@@ -419,7 +521,9 @@ def _do_monitor(args):
 
 
 def add_subparser(subparsers):
-    subparser = subparsers.add_parser('monitor')
+    subparser = subparsers.add_parser(
+        'monitor',
+        description='Monitor any command output over time.')
     subparser.add_argument('-u' ,'--uri',
                            default='tcp://127.0.0.1:28000',
                            help='URI of the server (default: %(default)s)')
