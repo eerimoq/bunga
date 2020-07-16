@@ -73,7 +73,7 @@ def load_config(path, name):
     try:
         config = config[name]
     except KeyError:
-        raise Exception(f"Monitor '{name}' not found.")
+        raise Exception(f"Plot '{name}' not found.")
 
     if config['interval'] < 1:
         raise Exception('Interval must be at least one.')
@@ -90,7 +90,7 @@ def is_y_axis_grid_row(frame_nrows, row):
     return ((frame_nrows - row - 4) % 6) == 0
 
 
-class Monitor:
+class Plot:
 
     def __init__(self, stdscr, config, args):
         self._config = config
@@ -111,7 +111,7 @@ class Monitor:
         self._y_axis_zoom = 1
         self._timestamp = time.time()
         self._y_axis_maximum = 0
-        
+
         stdscr.keypad(True)
         stdscr.nodelay(True)
         curses.use_default_colors()
@@ -323,8 +323,12 @@ class Monitor:
                    frame_col_left,
                    frame_col_right,
                    frame_ncols):
-        self.addstr_frame(frame_row_top, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
-        self.addstr(frame_row_top, frame_col_left + 1, f' {self._config["title"]} ')
+        self.addstr_frame(frame_row_top,
+                          frame_col_left,
+                          '┌' + (frame_ncols - 1) * '─' + '┐')
+        self.addstr(frame_row_top,
+                    frame_col_left + 1,
+                    f' {self._config["title"]} ')
 
         if self._connected:
             self.addstr_green(frame_row_top, frame_col_right - 11, ' Connected ')
@@ -335,7 +339,9 @@ class Monitor:
             self.addstr_frame(row + 1, frame_col_left, '│')
             self.addstr_frame(row + 1, frame_col_right, '│')
 
-        self.addstr_frame(self._nrows - 2, frame_col_left, '└' + (frame_ncols - 1) * '─' + '┘')
+        self.addstr_frame(self._nrows - 2,
+                          frame_col_left,
+                          '└' + (frame_ncols - 1) * '─' + '┘')
 
     def draw_data(self,
                   timestamps,
@@ -465,7 +471,7 @@ class Monitor:
         if not self.is_moved():
             self._x_axis_center = self._timestamp - self.timespan / 2
             self._y_axis_center = self._y_axis_maximum - self.valuespan / 2
-    
+
     def is_moved(self):
         if self._x_axis_center is not None:
             return True
@@ -508,24 +514,24 @@ class Monitor:
             self._modified = True
 
 
-def _do_monitor(args):
-    config = load_config('bunga-monitor.json', args.name)
+def _do_plot(args):
+    config = load_config('bunga-plot.json', args.name)
 
-    def monitor(stdscr):
-        Monitor(stdscr, config, args).run()
+    def plot(stdscr):
+        Plot(stdscr, config, args).run()
 
     try:
-        curses.wrapper(monitor)
+        curses.wrapper(plot)
     except KeyboardInterrupt:
         pass
 
 
 def add_subparser(subparsers):
     subparser = subparsers.add_parser(
-        'monitor',
-        description='Monitor any command output over time.')
+        'plot',
+        description='Plot any command output over time.')
     subparser.add_argument('-u' ,'--uri',
                            default='tcp://127.0.0.1:28000',
                            help='URI of the server (default: %(default)s)')
-    subparser.add_argument('name', help='Monitor name.')
-    subparser.set_defaults(func=_do_monitor)
+    subparser.add_argument('name', help='Plot name.')
+    subparser.set_defaults(func=_do_plot)

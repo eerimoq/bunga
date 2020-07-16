@@ -30,16 +30,16 @@ Stream logs from your system to your PC.
 
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/log.png
 
-The monitor subcommand
-----------------------
+The plot subcommand
+-------------------
 
-Monitor any command output over time. In this example the temperature.
+Plot any command output over time. In this example the temperature.
 
 .. code-block:: text
 
-   $ bunga monitor temperature
+   $ bunga plot temperature
 
-.. image:: https://github.com/eerimoq/bunga/raw/master/docs/monitor.gif
+.. image:: https://github.com/eerimoq/bunga/raw/master/docs/plot.gif
         
 The execute subcommand
 ----------------------
