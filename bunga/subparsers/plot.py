@@ -83,6 +83,9 @@ def load_config(path, name):
 
         raise Exception(message)
 
+    if 'title' not in config:
+        raise Exception('No title found.')
+
     if config['interval'] < 1:
         raise Exception('Interval must be at least one.')
 
