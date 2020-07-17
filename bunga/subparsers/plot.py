@@ -464,12 +464,12 @@ class Plot:
             self._y_axis_center = None
         elif key == 'c':
             self._data = []
-        elif key == 'kUP5':
+        elif key in ['kUP5', 'CTL_UP']:
             self._x_axis_zoom *= 2
 
             if self.is_moved():
                 self._y_axis_zoom *= 2
-        elif key == 'kDN5':
+        elif key in ['kDN5', 'CTL_DOWN']:
             self._x_axis_zoom /= 2
 
             if self.is_moved():
