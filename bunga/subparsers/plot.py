@@ -51,12 +51,8 @@ class Producer(threading.Thread):
 
     def run(self):
         while True:
-            # self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
-            # self._x += 0.2
-            self._data_queue.put((time.time(), self._x))
-            self._x += 1
-            if self._x > 30:
-                self._x = 0
+            self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
+            self._x += 0.2
             time.sleep(self._interval)
 
 
@@ -328,7 +324,7 @@ class Plot:
         if self._connected:
             status_text = ' Connected '
             col = frame_col_right - len(status_text)
-            self.addstr_green(0, col, status_text)
+            self.addstr(0, col, status_text)
         else:
             status_text = ' Disconnected '
             col = frame_col_right - len(status_text)
