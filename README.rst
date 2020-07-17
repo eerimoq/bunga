@@ -35,6 +35,8 @@ The plot subcommand
 
 Plot any command output over time. In this example the temperature.
 
+Press ``h`` or ``?`` to show the help.
+
 .. code-block:: text
 
    $ bunga plot temperature
