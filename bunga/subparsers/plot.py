@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
     }
 }
 
-HELP_FMT = '''\
+HELP_TEXT = '''\
 Quit: q or <Ctrl-C>
 Move: <Left>, <Right>, <Up> and <Down>
 Zoom: <Ctrl-Up> and <Ctrl-Down>
@@ -175,7 +175,7 @@ class Plot:
     def draw_help(self):
         margin = (self._ncols - HELP_NCOLS) // 2
         text_col_left = margin + 2
-        help_lines = HELP_FMT.splitlines()
+        help_lines = HELP_TEXT.splitlines()
 
         self.addstr_frame(
             1,
