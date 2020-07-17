@@ -123,7 +123,7 @@ class Plot:
         self._y_axis_center = None
         self._x_axis_zoom = 1
         self._y_axis_zoom = 1
-        self._timestamp = time.time()
+        self._x_axis_maximum = time.time()
         self._y_axis_maximum = 0
 
         stdscr.keypad(True)
@@ -197,7 +197,7 @@ class Plot:
         if self.is_moved():
             maximum = self._x_axis_center + self.timespan / 2
         else:
-            maximum = self._timestamp
+            maximum = self._x_axis_maximum
 
         minimum = maximum - self.timespan
 
@@ -275,7 +275,7 @@ class Plot:
 
     def draw_main(self):
         if self._playing and not self.is_moved():
-            self._timestamp = time.time()
+            self._x_axis_maximum = time.time()
 
         x_axis_minimum, x_axis_maximum = self.calc_x_limits()
         timestamps, values = self.data_timespan_slice(x_axis_minimum,
@@ -477,7 +477,7 @@ class Plot:
 
     def ensure_moving(self):
         if not self.is_moved():
-            self._x_axis_center = self._timestamp - self.timespan / 2
+            self._x_axis_center = self._x_axis_maximum - self.timespan / 2
             self._y_axis_center = self._y_axis_maximum - self.valuespan / 2
 
     def is_moved(self):
