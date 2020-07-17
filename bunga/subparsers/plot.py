@@ -301,16 +301,15 @@ class Plot:
                        frame_ncols,
                        grid_cols)
 
-        if timestamps:
-            self.draw_data(timestamps,
-                           values,
-                           frame_col_left,
-                           frame_nrows,
-                           frame_ncols,
-                           x_axis_minimum,
-                           x_axis_maximum,
-                           y_axis_minimum,
-                           y_axis_maximum)
+        self.draw_data(timestamps,
+                       values,
+                       frame_col_left,
+                       frame_nrows,
+                       frame_ncols,
+                       x_axis_minimum,
+                       x_axis_maximum,
+                       y_axis_minimum,
+                       y_axis_maximum)
 
         self.draw_x_axis(frame_nrows, grid_cols)
 
@@ -367,19 +366,26 @@ class Plot:
                   x_axis_maximum,
                   y_axis_minimum,
                   y_axis_maximum):
-        plot = plotille.plot(timestamps,
-                             values,
-                             height=frame_nrows - 1,
-                             width=frame_ncols - 1,
-                             x_min=x_axis_minimum,
-                             x_max=x_axis_maximum,
-                             y_min=y_axis_minimum,
-                             y_max=y_axis_maximum,
-                             origin=False)
+        if not timestamps:
+            return
 
-        for row, line in enumerate(plot.splitlines()[:-2]):
-            for mo in RE_SPLIT.finditer(line.partition('|')[2][1:]):
-                self.addstr(row - 1, frame_col_left + 1 + mo.start(1), mo.group(1))
+        canvas = plotille.Canvas(width=frame_ncols - 1,
+                                 height=frame_nrows - 1,
+                                 xmin=x_axis_minimum,
+                                 ymin=y_axis_minimum,
+                                 xmax=x_axis_maximum,
+                                 ymax=y_axis_maximum)
+        x0 = timestamps[0]
+        y0 = values[0]
+
+        for x1, y1 in zip(timestamps[1:], values[1:]):
+            canvas.line(x0, y0, x1, y1)
+            x0 = x1
+            y0 = y1
+
+        for row, line in enumerate(canvas.plot().splitlines()):
+            for mo in RE_SPLIT.finditer(line):
+                self.addstr(row + 1, frame_col_left + 1 + mo.start(1), mo.group(1))
 
     def draw_x_axis(self, frame_nrows, grid_cols):
         for col, timestamp in grid_cols:
