@@ -65,12 +65,23 @@ def load_config(path, name):
         with open(path, 'r') as fin:
             config = json.load(fin)
     else:
+        print(f"Plot configuration file '{path}' does not exist. Using default "
+              f"configuration.")
         config = DEFAULT_CONFIG
+        path = 'built-in.json'
 
     try:
         config = config[name]
     except KeyError:
-        raise Exception(f"Plot '{name}' not found.")
+        message = f"Plot '{name}' is not defined in configuration file '{path}'.\n"
+        message += '\n'
+        message += 'Defined plots are:\n'
+        message += '\n'
+
+        for name in config:
+            message += f'  {name}\n'
+
+        raise Exception(message)
 
     if config['interval'] < 1:
         raise Exception('Interval must be at least one.')
