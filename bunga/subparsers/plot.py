@@ -8,6 +8,7 @@ import plotille
 import queue
 import math
 import json
+import fractions
 
 
 DEFAULT_CONFIG = {
@@ -27,7 +28,6 @@ Zoom: <Ctrl-Up> and <Ctrl-Down>
 Pause: <Space>
 Reset: r
 Clear: c
-Grid: g
 Help: h or ?\
 '''
 
@@ -91,6 +91,10 @@ def is_y_axis_grid_row(frame_nrows, row):
     return ((frame_nrows - row - 4) % 6) == 0
 
 
+def zoom_number_to_text(zoom):
+    return str(fractions.Fraction(zoom))
+
+
 class Plot:
 
     def __init__(self, stdscr, config, args):
@@ -101,7 +105,6 @@ class Plot:
         self._modified = True
         self._show_help = False
         self._playing = True
-        self._show_grid = True
         self._connected = True
         self._data = []
         self._timespan = config['timespan']
@@ -273,25 +276,20 @@ class Plot:
         frame_col_left += 1
         frame_col_right = self._ncols - 1
         frame_ncols = frame_col_right - frame_col_left
-        frame_row_top = 0
-        frame_row_bottom = self._nrows - 2
-        frame_nrows = frame_row_bottom - frame_row_top
-
+        frame_nrows = self._nrows - 2
         grid_cols = self.calc_grid_cols(frame_col_left,
                                         frame_ncols,
                                         x_axis_minimum,
                                         x_axis_maximum)
 
-        self.draw_frame(frame_row_top,
-                        frame_col_left,
+        self.draw_frame(frame_col_left,
                         frame_col_right,
                         frame_ncols)
 
-        if self._show_grid:
-            self.draw_grid(frame_col_left,
-                           frame_nrows,
-                           frame_ncols,
-                           grid_cols)
+        self.draw_grid(frame_col_left,
+                       frame_nrows,
+                       frame_ncols,
+                       grid_cols)
 
         if timestamps:
             self.draw_data(timestamps,
@@ -304,10 +302,7 @@ class Plot:
                            y_axis_minimum,
                            y_axis_maximum)
 
-        self.draw_x_axis(frame_nrows,
-                         x_axis_minimum,
-                         x_axis_maximum,
-                         grid_cols)
+        self.draw_x_axis(frame_nrows, grid_cols)
 
         self.draw_y_axis(frame_col_left,
                          frame_nrows,
@@ -315,21 +310,34 @@ class Plot:
                          y_axis_maximum)
 
     def draw_frame(self,
-                   frame_row_top,
                    frame_col_left,
                    frame_col_right,
                    frame_ncols):
-        self.addstr_frame(frame_row_top,
-                          frame_col_left,
-                          '┌' + (frame_ncols - 1) * '─' + '┐')
-        self.addstr(frame_row_top,
-                    frame_col_left + 1,
-                    f' {self._config["title"]} ')
+        self.addstr_frame(0, frame_col_left, '┌' + (frame_ncols - 1) * '─' + '┐')
+        self.addstr(0, frame_col_left + 1, f' {self._config["title"]} ')
+
+        x_zoom = zoom_number_to_text(self._x_axis_zoom)
+        y_zoom = zoom_number_to_text(self._y_axis_zoom)
+        zoom_text = f' 🔍 {x_zoom}x,{y_zoom}x '
+
+        if self._playing:
+            playing_text = ' ▶ '
+        else:
+            playing_text = ' ⏸ '
 
         if self._connected:
-            self.addstr_green(frame_row_top, frame_col_right - 11, ' Connected ')
+            status_text = ' Connected '
+            col = frame_col_right - len(status_text)
+            self.addstr_green(0, col, status_text)
         else:
-            self.addstr_red_bold(frame_row_top, frame_col_right - 14, ' Disconnected ')
+            status_text = ' Disconnected '
+            col = frame_col_right - len(status_text)
+            self.addstr_red_bold(0, col, status_text)
+
+        col -= len(playing_text) + 1
+        self.addstr(0, col, playing_text)
+        col -= len(zoom_text) + 1
+        self.addstr(0, col, zoom_text)
 
         for row in range(self._nrows - 2):
             self.addstr_frame(row + 1, frame_col_left, '│')
@@ -363,11 +371,7 @@ class Plot:
             for mo in RE_SPLIT.finditer(line.partition('|')[2][1:]):
                 self.addstr(row - 1, frame_col_left + 1 + mo.start(1), mo.group(1))
 
-    def draw_x_axis(self,
-                    frame_nrows,
-                    x_axis_minimum,
-                    x_axis_maximum,
-                    grid_cols):
+    def draw_x_axis(self, frame_nrows, grid_cols):
         for col, timestamp in grid_cols:
             self.addstr_frame(frame_nrows, col, '┼')
             self.addstr(frame_nrows + 1, col - 3, format_clock(timestamp))
@@ -430,8 +434,6 @@ class Plot:
             self._show_help = True
         elif key == ' ':
             self._playing = not self._playing
-        elif key == 'g':
-            self._show_grid = not self._show_grid
         elif key == 'KEY_UP':
             self.ensure_moving()
             self._y_axis_center += self.valuespan / 8
@@ -502,7 +504,7 @@ class Plot:
             pass
 
     def update(self):
-        if self._playing:
+        if self._playing and not self._show_help:
             self.update_data()
 
         if curses.is_term_resized(self._nrows, self._ncols):
