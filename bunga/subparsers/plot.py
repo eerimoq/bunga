@@ -377,15 +377,15 @@ class Plot:
                     frame_nrows,
                     y_axis_minimum,
                     y_axis_maximum):
+        fmt = f'{{:-{frame_col_left - 1}}}'
+
         for row in range(1, frame_nrows):
             if is_y_axis_grid_row(frame_nrows, row):
                 self.addstr_frame(row, frame_col_left, '┼')
-                self.addstr_frame(
-                    row,
-                    0,
-                    str(round(y_axis_minimum
+                value = round(y_axis_minimum
                               + (frame_nrows - row + 1)
-                              * (y_axis_maximum - y_axis_minimum) / frame_nrows)))
+                              * (y_axis_maximum - y_axis_minimum) / frame_nrows)
+                self.addstr_frame(row, 0, fmt.format(value))
 
     def draw_grid(self,
                   frame_col_left,
