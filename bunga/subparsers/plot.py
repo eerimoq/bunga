@@ -425,7 +425,7 @@ class Plot:
                 value = round(y_axis_minimum
                               + (frame_nrows - row + 1)
                               * (y_axis_maximum - y_axis_minimum) / frame_nrows)
-                self.addstr_frame(row, 0, fmt.format(value))
+                self.addstr(row, 0, fmt.format(value))
 
     def draw_grid(self,
                   frame_col_left,
