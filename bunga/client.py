@@ -115,6 +115,8 @@ class Client(BungaClient):
         else:
             await asyncio.sleep(1)
 
+    def is_connected(self):
+        return self._is_connected
 
     async def on_connect_failure(self, exception):
         if isinstance(exception, ConnectionRefusedError):
@@ -378,6 +380,9 @@ class ClientThread(threading.Thread):
 
     def stop(self):
         pass
+
+    def is_connected(self):
+        return self._client.is_connected()
 
     def wait_for_connection(self, timeout=None):
         asyncio.run_coroutine_threadsafe(self._client.wait_for_connection(timeout),

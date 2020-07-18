@@ -10,6 +10,10 @@ import math
 import json
 import fractions
 
+from ..client import ClientThread
+from ..client import NotConnectedError
+from ..client import ExecuteCommandError
+
 
 DEFAULT_CONFIG = {
     'temperature': {
@@ -42,18 +46,32 @@ def format_clock(timestamp):
 
 class Producer(threading.Thread):
 
-    def __init__(self, config, data_queue):
+    def __init__(self, uri, config, data_queue):
         super().__init__()
         self._data_queue = data_queue
         self.daemon = True
+        self._command = config['command']
+        self._re_value = config['pattern']
         self._interval = config['interval']
-        self._x = 0
+        self._client = ClientThread(uri)
 
     def run(self):
+        self._client.start()
+
         while True:
-            self._data_queue.put((time.time(), 10 + 30 * math.sin(self._x)))
-            self._x += 0.2
+            try:
+                output = self._client.execute_command(self._command)
+            except (NotConnectedError, ExecuteCommandError):
+                sample = None
+            else:
+                value = float(self._re_value.match(output.decode()).group(1))
+                sample = (time.time(), value)
+
+            self._data_queue.put(sample)
             time.sleep(self._interval)
+
+    def is_connected(self):
+        return self._client.is_connected()
 
 
 class QuitError(Exception):
@@ -115,7 +133,6 @@ class Plot:
         self._modified = True
         self._show_help = False
         self._playing = True
-        self._connected = True
         self._data = []
         self._timespan = config['timespan']
         self._valuespan = 1
@@ -134,8 +151,11 @@ class Plot:
         curses.init_pair(2, curses.COLOR_RED, -1)
         curses.init_pair(3, curses.COLOR_GREEN, -1)
 
-        self._producer = Producer(config, self._data_queue)
+        self._producer = Producer(args.uri, config, self._data_queue)
         self._producer.start()
+
+    def _is_connected(self):
+        return self._producer.is_connected()
 
     @property
     def timespan(self):
@@ -334,7 +354,7 @@ class Plot:
         else:
             playing_text = ' ⏸ '
 
-        if self._connected:
+        if self._is_connected():
             status_text = ' Connected '
             col = frame_col_right - len(status_text)
             self.addstr(0, col, status_text)
@@ -514,7 +534,11 @@ class Plot:
     def update_data(self):
         try:
             while True:
-                self._data.append(self._data_queue.get_nowait())
+                value = self._data_queue.get_nowait()
+
+                if value is not None:
+                    self._data.append(value)
+
                 self._modified = True
         except queue.Empty:
             pass
