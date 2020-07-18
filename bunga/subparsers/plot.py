@@ -4,7 +4,6 @@ import re
 import time
 import curses
 from datetime import datetime
-import plotille
 import queue
 import math
 import json
@@ -34,6 +33,93 @@ Help: h or ?\
 HELP_NCOLS = 60
 
 RE_SPLIT = re.compile(r'⠀*([^⠀]+)')
+
+INDEXES_TO_BIT = (
+    (1 << 6, 1 << 7),
+    (1 << 2, 1 << 5),
+    (1 << 1, 1 << 4),
+    (1 << 0, 1 << 3)
+)
+
+
+class Canvas:
+
+    def __init__(self, width, height, x_min, y_min, x_max, y_max):
+        self._width = width
+        self._x_dots = 2 * width
+        self._y_dots = 4 * height
+        self._x_min = x_min
+        self._y_min = y_min
+        self._x_max = x_max
+        self._y_max = y_max
+        self._x_to_dot = self._x_dots / (x_max - x_min)
+        self._y_to_dot = self._y_dots / (y_max - y_min)
+        self._canvas = bytearray(width * height)
+
+    def draw_point(self, x, y):
+        x_dot = self._value_to_dot_x(x)
+        y_dot = self._value_to_dot_y(y)
+        self._draw_dot(x_dot, y_dot)
+
+    def draw_line(self, x0, y0, x1, y1):
+        if x0 > x1:
+            x = x0
+            x0 = x1
+            x1 = x
+            y = y0
+            y0 = y1
+            y1 = y
+
+        x0_dot = self._value_to_dot_x(x0)
+        y0_dot = self._value_to_dot_y(y0)
+        x1_dot = self._value_to_dot_x(x1)
+        y1_dot = self._value_to_dot_y(y1)
+        x_diff = (x1_dot - x0_dot)
+        y_diff = (y1_dot - y0_dot)
+        steps = max(abs(x_diff), abs(y_diff))
+
+        if steps > 0:
+            x_slope = x_diff / steps
+            y_slope = y_diff / steps
+
+        if y0_dot > y1_dot:
+            y0_dot -= 1
+
+        for i in range(steps):
+            self._draw_dot(int(x0_dot + x_slope * i), int(y0_dot + y_slope * i))
+
+    def _draw_dot(self, x_dot, y_dot):
+        if not 0 <= x_dot < self._x_dots:
+            return
+
+        if not 0 <= y_dot < self._y_dots:
+            return
+        
+        x_col, x_index = divmod(x_dot, 2)
+        y_row, y_index = divmod(y_dot, 4)
+        index = self._width * y_row + x_col
+
+        if index < len(self._canvas):
+            self._canvas[index] |= INDEXES_TO_BIT[y_index][x_index]
+
+    def _value_to_dot_x(self, value):
+        return int((value - self._x_min) * self._x_to_dot)
+
+    def _value_to_dot_y(self, value):
+        return int((value - self._y_min) * self._y_to_dot)
+
+    def __str__(self):
+        line = []
+        lines = []
+
+        for index, value in enumerate(self._canvas):
+            line.append(chr(0x2800 + value))
+
+            if (index % self._width) == (self._width - 1):
+                lines.append(''.join(line))
+                line = []
+
+        return '\n'.join(reversed(lines))
 
 
 def format_clock(timestamp):
@@ -369,21 +455,21 @@ class Plot:
         if not timestamps:
             return
 
-        canvas = plotille.Canvas(width=frame_ncols - 1,
-                                 height=frame_nrows - 1,
-                                 xmin=x_axis_minimum,
-                                 ymin=y_axis_minimum,
-                                 xmax=x_axis_maximum,
-                                 ymax=y_axis_maximum)
+        canvas = Canvas(frame_ncols - 1,
+                        frame_nrows - 1,
+                        x_axis_minimum,
+                        y_axis_minimum,
+                        x_axis_maximum,
+                        y_axis_maximum)
         x0 = timestamps[0]
         y0 = values[0]
 
         for x1, y1 in zip(timestamps[1:], values[1:]):
-            canvas.line(x0, y0, x1, y1)
+            canvas.draw_line(x0, y0, x1, y1)
             x0 = x1
             y0 = y1
 
-        for row, line in enumerate(canvas.plot().splitlines()):
+        for row, line in enumerate(str(canvas).splitlines()):
             for mo in RE_SPLIT.finditer(line):
                 self.addstr(row + 1, frame_col_left + 1 + mo.start(1), mo.group(1))
 
