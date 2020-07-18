@@ -553,7 +553,8 @@ class Plot:
 
 
 def _do_plot(args):
-    config = load_config('bunga-plot.json', args.name)
+    config = load_config(os.path.expanduser('~/.bunga-plot.json'),
+                         args.name)
 
     def plot(stdscr):
         Plot(stdscr, config, args).run()
