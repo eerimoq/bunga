@@ -46,12 +46,11 @@ def format_clock(timestamp):
 
 class Producer(threading.Thread):
 
-    def __init__(self, uri, config, data_queue):
+    def __init__(self, uri, config, output_queue):
         super().__init__()
-        self._data_queue = data_queue
+        self._output_queue = output_queue
         self.daemon = True
         self._command = config['command']
-        self._re_value = config['pattern']
         self._interval = config['interval']
         self._client = ClientThread(uri)
 
@@ -59,14 +58,16 @@ class Producer(threading.Thread):
         self._client.start()
 
         while True:
+            timestamp = time.time()
+
             try:
                 output = self._client.execute_command(self._command)
-            except (NotConnectedError, ExecuteCommandError):
-                value = None
-            else:
-                value = float(self._re_value.match(output.decode()).group(1))
+            except NotConnectedError:
+                output = None
+            except ExecuteCommandError:
+                output = None
 
-            self._data_queue.put((time.time(), value))
+            self._output_queue.put((timestamp, output))
             time.sleep(self._interval)
 
     def is_connected(self):
@@ -109,8 +110,6 @@ def load_config(path, name):
     if config['timespan'] < 1:
         raise Exception('Timespan must be at least one.')
 
-    config['pattern'] = re.compile(config['pattern'])
-
     return config
 
 
@@ -127,13 +126,14 @@ class Plot:
     def __init__(self, stdscr, config, args):
         self._config = config
         self._stdscr = stdscr
-        self._data_queue = queue.Queue()
+        self._output_queue = queue.Queue()
         self._nrows, self._ncols = stdscr.getmaxyx()
         self._modified = True
         self._show_help = False
         self._playing = True
         self._data = []
         self._timespan = config['timespan']
+        self._re_value = re.compile(config['pattern'], re.MULTILINE)
         self._valuespan = 1
         self._x_axis_center = None
         self._y_axis_center = None
@@ -148,9 +148,8 @@ class Plot:
         curses.curs_set(False)
         curses.init_pair(1, curses.COLOR_CYAN, -1)
         curses.init_pair(2, curses.COLOR_RED, -1)
-        curses.init_pair(3, curses.COLOR_GREEN, -1)
 
-        self._producer = Producer(args.uri, config, self._data_queue)
+        self._producer = Producer(args.uri, config, self._output_queue)
         self._producer.start()
 
     def _is_connected(self):
@@ -265,8 +264,9 @@ class Plot:
 
         for i in range(1, 5):
             timestamp = minimum + self.timespan / 4 * i
-            col = int(frame_ncols *
-                      (timestamp - x_axis_minimum) / (x_axis_maximum - x_axis_minimum))
+            col = int(
+                frame_ncols *
+                (timestamp - x_axis_minimum) / (x_axis_maximum - x_axis_minimum))
 
             if 0 < col < frame_ncols:
                 cols.append((frame_col_left + col, timestamp))
@@ -364,7 +364,7 @@ class Plot:
 
         x_zoom = zoom_number_to_text(self._x_axis_zoom)
         y_zoom = zoom_number_to_text(self._y_axis_zoom)
-        zoom_text = f' 🔍 {x_zoom}x,{y_zoom}x '
+        zoom_text = f' {x_zoom}x,{y_zoom}x '
 
         if self._playing:
             playing_text = ' ▶ '
@@ -475,9 +475,6 @@ class Plot:
     def addstr_red_bold(self, row, col, text):
         self.addstra(row, col, text, curses.color_pair(2) | curses.A_BOLD)
 
-    def addstr_green(self, row, col, text):
-        self.addstra(row, col, text, curses.color_pair(3))
-
     def addstr_frame(self, row, col, text):
         self.addstra(row, col, text, curses.color_pair(1))
 
@@ -552,11 +549,28 @@ class Plot:
         else:
             self.process_user_input_main(key)
 
+    def process_data(self, timestamp, output):
+        if output is None:
+            value = None
+        else:
+            output = output.decode()
+
+            mo = self._re_value.search(output)
+
+            if not mo:
+                raise Exception(
+                    f"Pattern '{self._config['pattern']}' does not match command "
+                    f"output '{output}'.")
+
+            value = float(mo.group(1))
+
+        self._data.append((timestamp, value))
+        self._modified = True
+
     def update_data(self):
         try:
             while True:
-                self._data.append(self._data_queue.get_nowait())
-                self._modified = True
+                self.process_data(*self._output_queue.get_nowait())
         except queue.Empty:
             pass
 
