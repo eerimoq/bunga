@@ -573,6 +573,8 @@ class Plot:
             self._y_axis_center = None
         elif key == 'c':
             self._data.clear()
+            self._previous_timestamp = None
+            self._previous_value = None
         elif key in ['kUP5', 'CTL_UP']:
             if self._x_axis_zoom < 16384:
                 self._x_axis_zoom *= 2
