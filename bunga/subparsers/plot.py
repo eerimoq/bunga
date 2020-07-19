@@ -39,7 +39,9 @@ DEFAULT_CONFIG = {
         'pattern': 'cpu' + 3 * '\s+\d+' + '\s+(\d+)',
         'algorithm': 'delta',
         'scale': -1,
-        'offset': 100
+        'offset': 100,
+        'y-min': 0,
+        'y-max': 100
     }
 }
 
