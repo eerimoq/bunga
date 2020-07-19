@@ -62,12 +62,11 @@ class Producer(threading.Thread):
             try:
                 output = self._client.execute_command(self._command)
             except (NotConnectedError, ExecuteCommandError):
-                sample = None
+                value = None
             else:
                 value = float(self._re_value.match(output.decode()).group(1))
-                sample = (time.time(), value)
 
-            self._data_queue.put(sample)
+            self._data_queue.put((time.time(), value))
             time.sleep(self._interval)
 
     def is_connected(self):
@@ -244,7 +243,15 @@ class Plot:
             y_axis_minimum /= self._y_axis_zoom
             y_axis_maximum /= self._y_axis_zoom
 
-        return y_axis_minimum, y_axis_maximum
+        decimals = (y_axis_maximum - y_axis_minimum) * (6 / (self._nrows - 2))
+        decimals = int(math.floor(math.log10(decimals)))
+
+        if decimals >= 0:
+            decimals = None
+        else:
+            decimals = int(-decimals)
+
+        return y_axis_minimum, y_axis_maximum, decimals
 
     def calc_grid_cols(self,
                        frame_col_left,
@@ -275,13 +282,12 @@ class Plot:
         value_before_x_axis_minimim = None
 
         for timestamp, value in self._data:
+            if value is None:
+                continue
+
             if timestamp < x_axis_minimum:
                 timestamp_before_x_axis_minimim = timestamp
                 value_before_x_axis_minimim = value
-            elif timestamp > x_axis_maximum:
-                timestamps.append(timestamp)
-                values.append(value)
-                break
             else:
                 if timestamp_before_x_axis_minimim is not None:
                     timestamps.append(timestamp_before_x_axis_minimim)
@@ -291,18 +297,28 @@ class Plot:
                 timestamps.append(timestamp)
                 values.append(value)
 
+                if timestamp > x_axis_maximum:
+                    break
+
         return timestamps, values
 
     def draw_main(self):
         if self._playing and not self.is_moved():
-            self._x_axis_maximum = time.time()
+            if self._data:
+                self._x_axis_maximum = self._data[-1][0]
+            else:
+                self._x_axis_maximum = time.time()
 
         x_axis_minimum, x_axis_maximum = self.calc_x_limits()
         timestamps, values = self.data_timespan_slice(x_axis_minimum,
                                                       x_axis_maximum)
-        y_axis_minimum, y_axis_maximum = self.calc_y_limits(values)
-        frame_col_left = max(len(str(round(y_axis_minimum))),
-                             len(str(round(y_axis_maximum))))
+        y_axis_minimum, y_axis_maximum, y_axis_decimals = self.calc_y_limits(values)
+        frame_col_left = max(len(str(math.floor(y_axis_minimum))),
+                             len(str(math.ceil(y_axis_maximum))))
+
+        if y_axis_decimals is not None:
+            frame_col_left += y_axis_decimals + 1
+
         frame_col_left += 1
         frame_col_right = self._ncols - 1
         frame_ncols = frame_col_right - frame_col_left
@@ -336,7 +352,8 @@ class Plot:
         self.draw_y_axis(frame_col_left,
                          frame_nrows,
                          y_axis_minimum,
-                         y_axis_maximum)
+                         y_axis_maximum,
+                         y_axis_decimals)
 
     def draw_frame(self,
                    frame_col_left,
@@ -416,7 +433,8 @@ class Plot:
                     frame_col_left,
                     frame_nrows,
                     y_axis_minimum,
-                    y_axis_maximum):
+                    y_axis_maximum,
+                    y_axis_decimals):
         fmt = f'{{:-{frame_col_left - 1}}}'
 
         for row in range(1, frame_nrows):
@@ -424,7 +442,8 @@ class Plot:
                 self.addstr_frame(row, frame_col_left, '┼')
                 value = round(y_axis_minimum
                               + (frame_nrows - row + 1)
-                              * (y_axis_maximum - y_axis_minimum) / frame_nrows)
+                              * (y_axis_maximum - y_axis_minimum) / frame_nrows,
+                              y_axis_decimals)
                 self.addstr(row, 0, fmt.format(value))
 
     def draw_grid(self,
@@ -491,15 +510,17 @@ class Plot:
         elif key == 'c':
             self._data = []
         elif key in ['kUP5', 'CTL_UP']:
-            self._x_axis_zoom *= 2
+            if self._x_axis_zoom < 16384:
+                self._x_axis_zoom *= 2
 
-            if self.is_moved():
-                self._y_axis_zoom *= 2
+                if self.is_moved():
+                    self._y_axis_zoom *= 2
         elif key in ['kDN5', 'CTL_DOWN']:
-            self._x_axis_zoom /= 2
+            if self._x_axis_zoom > 1 / 16384:
+                self._x_axis_zoom /= 2
 
-            if self.is_moved():
-                self._y_axis_zoom /= 2
+                if self.is_moved():
+                    self._y_axis_zoom /= 2
 
     def ensure_moving(self):
         if not self.is_moved():
@@ -534,11 +555,7 @@ class Plot:
     def update_data(self):
         try:
             while True:
-                value = self._data_queue.get_nowait()
-
-                if value is not None:
-                    self._data.append(value)
-
+                self._data.append(self._data_queue.get_nowait())
                 self._modified = True
         except queue.Empty:
             pass
