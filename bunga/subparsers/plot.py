@@ -122,6 +122,12 @@ def load_config(path, name):
     if 'title' not in config:
         config['title'] = 'Untitled'
 
+    if 'command' not in config:
+        raise Exception('No command found.')
+
+    if 'pattern' not in config:
+        config['pattern'] = '([\d\.]+)'
+
     if 'algorithm' not in config:
         config['algorithm'] = 'normal'
 
@@ -130,12 +136,6 @@ def load_config(path, name):
 
     if 'timespan' not in config:
         config['timespan'] = 60
-
-    if 'command' not in config:
-        raise Exception('No command found.')
-
-    if 'pattern' not in config:
-        config['pattern'] = '([\d\.]+)'
 
     if 'scale' not in config:
         config['scale'] = 1

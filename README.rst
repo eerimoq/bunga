@@ -33,16 +33,40 @@ Stream logs from your system to your PC.
 The plot subcommand
 -------------------
 
-Plot any command output over time. In this example the temperature.
-
-Press ``h`` or ``?`` to show the help.
+Plot any command output over time. The plot below shows the CPU load.
 
 .. code-block:: text
 
-   $ bunga plot temperature
+   $ bunga plot cpu
 
 .. image:: https://github.com/eerimoq/bunga/raw/master/docs/plot.gif
-        
+
+Press ``h`` or ``?`` to show the help.
+
+Define plots in ``~/.bunga-plot.json``.
+
+.. code-block:: json
+
+   {
+       "cpu": {
+           "title": "CPU [%]",
+           "command": "cat proc/stat",
+           "pattern": "cpu\\s+\\d+\\s+\\d+\\s+\\d+\\s+(\\d+)",
+           "algorithm": "delta",
+           "interval": 2,
+           "timespan": 60
+           "scale": -1,
+           "offset": 100,
+           "y-min": 0,
+           "y-max": 100
+       },
+       "uptime": {
+           "title": "Uptime [s]",
+           "command": "cat proc/uptime",
+           "max-values": 1000
+       }
+   }
+
 The execute subcommand
 ----------------------
 
