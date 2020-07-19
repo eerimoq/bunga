@@ -16,12 +16,29 @@ from ..client import ExecuteCommandError
 
 
 DEFAULT_CONFIG = {
-    'temperature': {
-        'title': 'Temperature [C]',
-        'command': 'ds18b20 read 28000013423433',
-        'pattern': '^(\d+\.\d+)',
-        'interval': 5,
-        'timespan': 60
+    'eth0-tx': {
+        'title': 'eth0 tx [bytes/s]',
+        'command': 'cat proc/net/dev',
+        'pattern': '^\s*eth0:' + 8 * '\s+\d+' + '\s+(\d+)',
+        'algorithm': 'delta'
+    },
+    'eth0-rx': {
+        'title': 'eth0 rx [bytes/s]',
+        'command': 'cat proc/net/dev',
+        'pattern': '^\s*eth0:\s+(\d+)',
+        'algorithm': 'delta'
+    },
+    'uptime': {
+        'title': 'Uptime [s]',
+        'command': 'cat proc/uptime'
+    },
+    'cpu': {
+        'title': 'CPU [%]',
+        'command': 'cat proc/stat',
+        'pattern': 'cpu' + 3 * '\s+\d+' + '\s+(\d+)',
+        'algorithm': 'delta',
+        'scale': -1,
+        'offset': 100
     }
 }
 
@@ -102,7 +119,28 @@ def load_config(path, name):
         raise Exception(message)
 
     if 'title' not in config:
-        raise Exception('No title found.')
+        config['title'] = 'Untitled'
+
+    if 'algorithm' not in config:
+        config['algorithm'] = 'normal'
+
+    if 'interval' not in config:
+        config['interval'] = 1
+
+    if 'timespan' not in config:
+        config['timespan'] = 60
+
+    if 'command' not in config:
+        raise Exception('No command found.')
+
+    if 'pattern' not in config:
+        config['pattern'] = '([\d\.]+)'
+
+    if 'scale' not in config:
+        config['scale'] = 1
+
+    if 'offset' not in config:
+        config['offset'] = 0
 
     if config['interval'] < 1:
         raise Exception('Interval must be at least one.')
@@ -141,6 +179,11 @@ class Plot:
         self._y_axis_zoom = 1
         self._x_axis_maximum = time.time()
         self._y_axis_maximum = 0
+        self._algorithm = config['algorithm']
+        self._scale = config['scale']
+        self._offset = config['offset']
+        self._previous_timestamp = None
+        self._previous_value = None
 
         stdscr.keypad(True)
         stdscr.nodelay(True)
@@ -563,6 +606,22 @@ class Plot:
                     f"output '{output}'.")
 
             value = float(mo.group(1))
+
+            if self._algorithm == 'delta':
+                previous_value = self._previous_value
+                self._previous_value = value
+
+                if self._previous_timestamp is None:
+                    value = None
+                else:
+                    value -= previous_value
+                    value /= (timestamp - self._previous_timestamp)
+
+                self._previous_timestamp = timestamp
+
+            if value is not None:
+                value *= self._scale
+                value += self._offset
 
         self._data.append((timestamp, value))
         self._modified = True
