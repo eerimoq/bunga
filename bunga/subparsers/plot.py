@@ -9,6 +9,7 @@ import queue
 import math
 import json
 import fractions
+from collections import deque
 
 from ..client import ClientThread
 from ..client import NotConnectedError
@@ -142,11 +143,26 @@ def load_config(path, name):
     if 'offset' not in config:
         config['offset'] = 0
 
+    if 'y-min' not in config:
+        config['y-min'] = None
+
+    if 'y-max' not in config:
+        config['y-max'] = None
+
     if config['interval'] < 1:
         raise Exception('Interval must be at least one.')
 
     if config['timespan'] < 1:
         raise Exception('Timespan must be at least one.')
+
+    if config['interval'] >= config['timespan']:
+        raise Exception(f'Interval must be smaller than timespan.')
+
+    if 'max-values' not in config:
+        config['max-values'] = 16 * int(config['timespan'] / config['interval'])
+
+    if config['max-values'] < 2:
+        raise Exception(f'Maximum values must be at least two.')
 
     return config
 
@@ -169,7 +185,7 @@ class Plot:
         self._modified = True
         self._show_help = False
         self._playing = True
-        self._data = []
+        self._data = deque(maxlen=config['max-values'])
         self._timespan = config['timespan']
         self._re_value = re.compile(config['pattern'], re.MULTILINE)
         self._valuespan = 1
@@ -182,6 +198,8 @@ class Plot:
         self._algorithm = config['algorithm']
         self._scale = config['scale']
         self._offset = config['offset']
+        self._y_min = config['y-min']
+        self._y_max = config['y-max']
         self._previous_timestamp = None
         self._previous_value = None
 
@@ -268,7 +286,7 @@ class Plot:
         if self.is_moved():
             y_axis_maximum = self._y_axis_center + self.valuespan / 2
             y_axis_minimum = y_axis_maximum - self.valuespan
-        else:
+        elif self._y_min is None and self._y_max is None:
             if values:
                 minimum_value = min(values)
                 maximum_value = max(values)
@@ -284,6 +302,12 @@ class Plot:
 
             y_axis_minimum /= self._y_axis_zoom
             y_axis_maximum /= self._y_axis_zoom
+        else:
+            delta = max(self._y_max - self._y_min, 1)
+            y_axis_minimum = self._y_min
+            y_axis_maximum = self._y_max + delta * 0.01
+            self._y_axis_maximum = y_axis_maximum
+            self._valuespan = y_axis_maximum - y_axis_minimum
 
         decimals = (y_axis_maximum - y_axis_minimum) * (6 / (self._nrows - 2))
         decimals = int(math.floor(math.log10(decimals)))
@@ -548,7 +572,7 @@ class Plot:
             self._x_axis_center = None
             self._y_axis_center = None
         elif key == 'c':
-            self._data = []
+            self._data.clear()
         elif key in ['kUP5', 'CTL_UP']:
             if self._x_axis_zoom < 16384:
                 self._x_axis_zoom *= 2
