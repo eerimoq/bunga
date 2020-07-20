@@ -63,7 +63,7 @@ Define plots in ``~/.bunga-plot.json``.
        "uptime": {
            "title": "Uptime [s]",
            "command": "cat proc/uptime",
-           "max-values": 1000
+           "max-age": 600
        }
    }
 

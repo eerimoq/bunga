@@ -248,11 +248,8 @@ def load_config(path, name):
     if config['interval'] >= config['timespan']:
         raise Exception(f'Interval must be smaller than timespan.')
 
-    if 'max-values' not in config:
-        config['max-values'] = 16 * int(config['timespan'] / config['interval'])
-
-    if config['max-values'] < 2:
-        raise Exception(f'Maximum values must be at least two.')
+    if 'max-age' not in config:
+        config['max-age'] = 16 * config['timespan']
 
     return config
 
@@ -275,7 +272,7 @@ class Plot:
         self._modified = True
         self._show_help = False
         self._playing = True
-        self._data = deque(maxlen=config['max-values'])
+        self._data = deque(maxlen=int(config['max-age'] / config['interval']))
         self._timespan = config['timespan']
         self._re_value = re.compile(config['pattern'], re.MULTILINE)
         self._valuespan = 1
