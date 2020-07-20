@@ -380,8 +380,8 @@ class Plot:
                 minimum_value = min(values)
                 maximum_value = max(values)
                 delta = max(maximum_value - minimum_value, 1)
-                y_axis_minimum = minimum_value - delta * 0.1
-                y_axis_maximum = maximum_value + delta * 0.1
+                y_axis_minimum = minimum_value - delta * 0.01
+                y_axis_maximum = maximum_value + delta * 0.01
                 self._y_axis_maximum = y_axis_maximum
             else:
                 y_axis_minimum = 0
