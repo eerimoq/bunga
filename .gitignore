@@ -13,3 +13,4 @@ logs
 /put.txt
 .coverage
 htmlcov
+.eggs
