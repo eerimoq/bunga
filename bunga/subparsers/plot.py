@@ -483,8 +483,8 @@ class Plot:
         canvas = irwin.Canvas(frame_ncols - 1,
                               frame_nrows - 1,
                               x_axis_minimum,
-                              y_axis_minimum,
                               x_axis_maximum,
+                              y_axis_minimum,
                               y_axis_maximum)
         x0 = timestamps[0]
         y0 = values[0]
